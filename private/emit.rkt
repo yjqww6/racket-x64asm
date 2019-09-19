@@ -17,7 +17,7 @@
       ['()
        (define s (set-subtract required labels))
        (unless (set-empty? s)
-         (error 'emit-code! "unresolve references ~a" s))]
+         (error 'emit-code! "unresolved references ~a" s))]
       [(cons c ls)
        (loop (set-union (list->set
                          (map Reloc-Cell-label

@@ -72,7 +72,12 @@
     [(_ size a - d:number)
      #'(Mref size a #f (or-imm (- d)))]
     [(_ size a + d)
-     #'(Mref size a (cons d (ann 1 Scale)) #f)]
+     #'(let ([ts : Size size]
+             [ta a]
+             [td d])
+         (if (Reg? td)
+             (Mref ts ta (cons td (ann 1 Scale)) #f)
+             (Mref ts ta #f (or-imm td))))]
     [(_ size b * c)
      #'(Mref size #f (cons b (ann c Scale)) #f)]
     [(_ size a)

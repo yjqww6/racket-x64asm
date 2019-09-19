@@ -44,6 +44,18 @@
    (dump!
     (unsafe-lea:Gv-Mv rax (mref 64 rdx + 1)))
    #"\x48\x8d\x42\x01")
+  
+  (check-equal?
+   (let ([a 1])
+     (dump!
+      (lea rax (mref 64 rdx + a))))
+   #"\x48\x8d\x42\x01")
+  (check-equal?
+   (let ([a rdx])
+     (dump!
+      (lea rax (mref 64 rdx + a))))
+   #"\x48\x8d\x04\x12")
+  
   (check-equal?
    (dump!
     (bswap r11))
