@@ -362,3 +362,32 @@
      499500))
 
   (reset-assembler!))
+
+
+(module+ test
+
+  (unsafe-require/typed ffi/unsafe
+                        [#:opaque CType ctype?]
+                        [_int CType])
+  (unsafe-require/typed ffi/cvector
+                        [#:opaque CVector cvector?]
+                        [cvector (CType Fixnum * -> CVector)])
+  
+  (define-cast cv->i
+    #:type (CVector Index -> Integer)
+    #:requires (ffi/cvector)
+    #:ctype (_fun _cvector _size -> _int))
+  (define-λ! cv-index cv->i
+    (mov eax (mref 32
+                   (if (eq? (system-type) 'windows)
+                       rcx
+                       rdi)
+                   +
+                   (if (eq? (system-type) 'windows)
+                       rdx
+                       rsi)
+                   * 4))
+    (ret))
+  
+  (check-equal? (cv-index (cvector _int 0 0 2019 0 0) 2)
+                2019))
