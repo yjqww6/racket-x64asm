@@ -1,27 +1,21 @@
 #lang typed/racket
-(require "../main.rkt" typed/racket/unsafe)
+(require "../main.rkt"
+         typed/racket/unsafe)
 
-(module casts racket/base
-  (require ffi/unsafe racket/flonum)
-  (define (flfls p)
-    (function-ptr (cast p _uintptr _pointer)
-                  (_fun (a b) ::
-                        (_pointer = (flvector->cpointer a))
-                        (_pointer = (flvector->cpointer b))
-                        [_size = (flvector-length b)] -> _void)))
-  (define (v->s p)
-    (function-ptr (cast p _uintptr _pointer)
-                  (_fun (a : (_vector i _int))
-                        [_size = (vector-length a)] -> _intptr)))
-  (provide flfls v->s))
+(define-cast flfls
+  #:type (FlVector FlVector -> Void)
+  #:requires (racket/flonum)
+  #:ctype (_fun (a b) ::
+                (_pointer = (flvector->cpointer a))
+                (_pointer = (flvector->cpointer b))
+                [_size = (flvector-length b)] -> _void))
 
-(unsafe-require/typed 'casts
-                      [flfls (-> Nonnegative-Fixnum
-                                 (FlVector FlVector -> Void))]
-                      [v->s (-> Nonnegative-Fixnum
-                                ((Vectorof Fixnum) -> Integer))])
+(define-cast v->s
+  #:type ((Vectorof Fixnum) -> Integer)
+  #:ctype (_fun (a : (_vector i _int))
+                [_size = (vector-length a)] -> _intptr))
+
 ;;; from gcc outputs
-
 (define (generate [asm : Assembler (make-assembler)])
   (parameterize ([current-assembler asm])
     (values

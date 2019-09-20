@@ -118,6 +118,10 @@
       (cons cell (Context-inst-relocs ctx)))
      (asm-bytes! ctx (make-bytes (fxquotient size 8)))]))
 
+(define (:! [l : Label] #:ctx [ctx : (Option Context) (current-context)])
+  (assert ctx)
+  (asm-label! ctx l))
+
 (module+ debug
   (define (dump-ctx [ctx : Context])
     (subbytes (Context-buf ctx) 0 (Context-offset ctx)))

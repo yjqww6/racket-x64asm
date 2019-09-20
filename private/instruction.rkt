@@ -4,12 +4,6 @@
          racket/match
          (for-syntax racket/base syntax/parse syntax/name))
 
-(define (:! [l : Label] #:ctx [ctx : (Option Context) (current-context)])
-  (assert ctx)
-  (asm-label! ctx l))
-(provide :!)
-
-
 (define-for-syntax (generate-indices stx)
   (datum->syntax #'k (build-list (length (syntax->list stx)) values)))
 

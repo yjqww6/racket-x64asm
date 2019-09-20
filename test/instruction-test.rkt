@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
 (module+ test
-  (require "../main.rkt" "macros.rkt"
+  (require "../main.rkt"
            (submod "../private/assembler.rkt" debug))
   
   (require (for-syntax racket/base)

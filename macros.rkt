@@ -1,22 +1,11 @@
 #lang typed/racket/base
 (require (for-syntax racket/base syntax/parse)
          typed/racket/unsafe
-         "../main.rkt")
+         "private/operand.rkt"
+         "private/assembler.rkt"
+         "private/emit.rkt")
 
 (provide define-cast λ! define-λ!)
-
-(module castme racket/base
-  (require ffi/unsafe)
-  (define-namespace-anchor ac)
-  (define ns (namespace-anchor->namespace ac))
-  (define (make-cast ct)
-    (λ (p)
-      (function-ptr (cast p _uintptr _pointer)
-                    (eval ct ns))))
-  (provide make-cast))
-
-(unsafe-require/typed 'castme
-                      [make-cast (All (a) (Any -> (Nonnegative-Fixnum -> a)))])
 
 (define-syntax define-cast
   (syntax-parser
@@ -25,7 +14,20 @@
               (~optional (~seq #:requires (r ...)) #:defaults ([(r 1) '()]))
               (~once (~seq #:type T)))
         ...)
-     #'(define name ((inst make-cast T) 'ctype))]))
+     #`(begin
+         (module name racket/base
+           (begin
+             (require #,(datum->syntax #f 'racket/base)
+                      #,(datum->syntax #f 'ffi/unsafe) r ...)
+             (define id
+               #,(datum->syntax
+                  #f
+                  `(λ (p)
+                     (function-ptr (cast p _uintptr _pointer)
+                                   ,(syntax->datum #'ctype)))))
+             (provide id)))
+         (unsafe-require/typed 'name
+                               [(id name) (Nonnegative-Fixnum -> T)]))]))
 
 (define-syntax λ!
   (syntax-parser
