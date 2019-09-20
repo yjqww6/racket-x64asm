@@ -167,7 +167,7 @@
   
   (check-equal?
    ((->intptr
-     (with-labels (#:entry a)
+     (with-labels #:captured (#:entry a)
        (parameterize ([current-context (make-context)])
          (:! (label a))
          (xor rax rax)
@@ -206,12 +206,13 @@
 
   (check-equal?
    ((λ! ->intptr
-        (mov rax (imm64 (label b)))
+        (define b (label))
+        (mov rax (imm64 b))
         (call rax)
         (ret)
         (nop)
         (nop)
-        (:! (label b))
+        (:! b)
         (mov rax (imm32 1096))
         (ret)))
    1096)

@@ -128,15 +128,24 @@
 
 (define-syntax (with-labels stx)
   (syntax-parse stx
-    [(_ ((~alt (~seq #:entry e:id) l:id) ...) body ...)
-     #`(let ()
-         (define e (entry)) ...
-         (define l (label)) ...
-         (syntax-parameterize
-             ([current-labels-target
-               (make-hasheq
-                (list (cons 'l #'l) ...
-                      (cons 'e #'e) ...))])
-           (with-labels-helper body ...))
-         )
-     ]))
+    [(_ (~optional (~and cap #:captured) #:defaults ([cap #'#f]))
+        ((~alt (~seq #:entry e:id) l:id) ...) body ...)
+     (cond
+       [(syntax-e #'cap)
+        #`(let ()
+            (define e (entry)) ...
+            (define l (label)) ...
+            (syntax-parameterize
+                ([current-labels-target
+                  (make-hasheq
+                   (list (cons 'l #'l) ...
+                         (cons 'e #'e) ...))])
+              (with-labels-helper body ...))
+            )]
+       [else
+        #'(let ()
+            (define e (entry)) ...
+            (define l (label)) ...
+            (let ()
+              body
+              ...))])]))
