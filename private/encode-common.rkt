@@ -6,43 +6,44 @@
 
 (define (mod/rm [reg-bits : Byte] [operand : (U Reg Mref)])
   : (Values Byte Byte (Option Byte) (Option Imm))
+
+  (define b00 0)
+  (define b01 #b01000000)
+  (define b10 #b10000000)
+  (define b11 #b11000000)
   
   (define (disp->mod disp)
     (match disp
-      [#f #b00]
-      [(Imm 8) #b01]
-      [(Imm 32) #b10]))
+      [#f b00]
+      [(Imm 8) b01]
+      [(Imm 32) b10]))
 
   (define (rex.rxb [r : Byte] [x : Byte] [b : Byte]) : Byte
-    (bitwise-and
-     #xff
-     (bitwise-ior (arithmetic-shift (bitwise-and r #b1000) -1)
-                  (bitwise-ior (arithmetic-shift (bitwise-and x #b1000) -2)
-                               (arithmetic-shift (bitwise-and b #b1000) -3)))))
+    (bitwise-ior (arithmetic-shift (bitwise-and r #b1000) -1)
+                 (bitwise-ior (arithmetic-shift (bitwise-and x #b1000) -2)
+                              (arithmetic-shift (bitwise-and b #b1000) -3))))
 
   (define (modrm/sib [mod : Byte] [reg : Byte] [rm : Byte]) : Byte
-    (bitwise-and
-     #xff
-     (bitwise-ior (arithmetic-shift mod 6)
-                  (bitwise-ior (arithmetic-shift (bitwise-and reg #b111) 3)
-                               (bitwise-and rm #b111)))))
+    (bitwise-ior mod
+                 (bitwise-ior (bitwise-and (arithmetic-shift reg 3) #b111000)
+                              (bitwise-and rm #b111))))
 
   (define (->scale [s : Scale]) : Byte
     (match s
-      [1 #b00]
-      [2 #b01]
-      [4 #b10]
-      [8 #b11]))
+      [1 b00]
+      [2 b01]
+      [4 b10]
+      [8 b11]))
   
   (match operand
     [(?Reg #:code code)
      (values (rex.rxb reg-bits 0 code)
-             (modrm/sib #b11 reg-bits code)
+             (modrm/sib b11 reg-bits code)
              #f #f)]
     [(Mref _ #f #f (and disp (Imm 32)))
      (values (rex.rxb reg-bits 0 0)
-             (modrm/sib #b00 reg-bits #b100)
-             (modrm/sib #b00 #b100 #b101)
+             (modrm/sib b00 reg-bits #b100)
+             (modrm/sib b00 #b100 #b101)
              disp)]
     [(Mref size (and (rbp) r) #f #f)
      (mod/rm reg-bits (Mref size r #f (Immediate 8 0)))]
@@ -53,7 +54,7 @@
              #f disp)]
     [(Mref _ #f (cons (and (?Reg #:code index) (not (rsp))) s) disp)
      (values (rex.rxb reg-bits index #b101)
-             (modrm/sib #b00 reg-bits #b100)
+             (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
              (and disp (Imm-resize disp (ann 32 32))))]
     [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (rsp))) s) disp)

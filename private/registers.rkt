@@ -26,8 +26,9 @@
          (define-match-expander id
            (λ (stx)
              (syntax-case stx ()
-               [(_) #'(== reg)]
-               [(_ s) #'(and (== reg)
+               [(_) #'(or (== reg eq?)
+                          (Reg 'id code size))]
+               [(_ s) #'(and (id)
                              (?Reg #:size s))]))
            (λ (stx)
              (syntax-case stx ()
@@ -46,9 +47,12 @@
              (λ (stx)
                (syntax-case stx ()
                  [(_)
-                  #'(or #;(n8) (n16) (n32) (n64))]
+                  #'(or (== n16 eq?)
+                        (== n32 eq?)
+                        (== n64 eq?)
+                        (n16) (n32) (n64))]
                  [(_ s)
-                  #'(or (n16 s) (n32 s) (n64 s))]))))
+                  #'(and (?Reg #:size s) (?P))]))))
          ...)]))
 
 (define-reg GPR ah 4 8)

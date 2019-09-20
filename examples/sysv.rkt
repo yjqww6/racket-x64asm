@@ -22,8 +22,8 @@
                                 ((Vectorof Fixnum) -> Integer))])
 ;;; from gcc outputs
 
-(define-values (flvector-add! vector-sum)
-  (parameterize ([current-assembler (make-assembler)])
+(define (generate [asm : Assembler (make-assembler)])
+  (parameterize ([current-assembler asm])
     (values
      (flfls
       (parameterize ([current-context (make-context)])
@@ -139,4 +139,12 @@
           (emit-code!)
           (find-entry a)))))))
 
+(define-values (flvector-add! vector-sum)
+  (generate))
+
 (provide vector-sum flvector-add!)
+
+(module+ main
+  (time
+   (for ([i (in-range 10000)])
+     (generate))))

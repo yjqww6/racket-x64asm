@@ -53,8 +53,7 @@
 (define-match-expander J
   (syntax-parser
     [(_ size)
-     #'(or (Immediate size _)
-           (Relocate size _ #t))]))
+     #'(or (Relocate size _ #t) (Immediate size _))]))
 
 (define-match-expander O
   (syntax-parser

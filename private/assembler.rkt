@@ -1,7 +1,8 @@
 #lang typed/racket/base
 (provide (all-defined-out))
 (require "registers.rkt" "operand.rkt"
-         racket/match racket/fixnum racket/stxparam)
+         racket/match racket/fixnum racket/stxparam
+         (for-syntax racket/base racket/syntax))
 
 (struct Assembler ([global-labels : (HashTable Label Nonnegative-Fixnum)]
                    [contexts : (Listof Context)]
@@ -41,8 +42,8 @@
   (define buf
     (let ([old (Context-buf ctx)])
       (cond
-        [(> (+ len off) (bytes-length old))
-         (define b (make-bytes (* 2 (bytes-length old))))
+        [(> (fx+ len off) (bytes-length old))
+         (define b (make-bytes (fx* 2 (bytes-length old))))
          (bytes-copy! b 0 old)
          (set-Context-buf! ctx b)
          b]
@@ -61,6 +62,18 @@
   (bytes-set! cache start b)
   (set-Context-inst-size! ctx (fx+ start 1)))
 
+(define-syntax (asm-byte*! stx)
+  (syntax-case stx ()
+    [(_ c b ...)
+     (with-syntax* ([len (length (syntax->list #'(b ...)))]
+                    [(i ...) (build-list (syntax-e #'len) values)])
+       #'(let ([ctx c])
+           (define cache (Context-inst-cache ctx))
+           (define start (Context-inst-size ctx))
+           (bytes-set! cache (fx+ start i) (ann b Byte))
+           ...
+           (set-Context-inst-size! ctx (fx+ start len))))]))
+
 (define (asm-bytes! [ctx : Context] [b : Bytes])
   (define cache (Context-inst-cache ctx))
   (define start (Context-inst-size ctx))
@@ -72,17 +85,29 @@
   (set-box! (Label-assigned? l) #t)
   (hash-set! (Context-local-labels ctx) l (Context-offset ctx)))
 
-(define (int->bytes [num : Integer] [n : Integer])
-  (if (< num 0)
-      (integer->integer-bytes num n #t)
-      (integer->integer-bytes num n #f)))
-
 (define (asm-imm! [ctx : Context] [imm : Imm])
   (match imm
-    [(Immediate 8 num) (asm-bytes! ctx (int->bytes num 1))]
-    [(Immediate 16 num) (asm-bytes! ctx (int->bytes num 2))]
-    [(Immediate 32 num) (asm-bytes! ctx (int->bytes num 4))]
-    [(Immediate 64 num) (asm-bytes! ctx (int->bytes num 8))]
+    [(Immediate 8 num)
+     #:when (<= -128 num 255)
+     (asm-byte! ctx (fxand num #xff))]
+    [(Immediate 16 num)
+     #:when (<= (- (expt 2 15)) num (- (expt 2 16) 1))
+     (asm-byte*! ctx
+                 (fxand num #xff)
+                 (fxand (fxrshift num 8) #xff))]
+    [(Immediate 32 num)
+     #:when (<= (- (expt 2 31)) num (- (expt 2 32) 1))
+     (asm-byte*! ctx
+                 (fxand num #xff)
+                 (fxand (fxrshift num 8) #xff)
+                 (fxand (fxrshift num 16) #xff)
+                 (fxand (fxrshift num 24) #xff))]
+    [(Immediate 64 num)
+     (cond
+       [(< num 0)
+        (asm-bytes! ctx (integer->integer-bytes num 8 #t))]
+       [else
+        (asm-bytes! ctx (integer->integer-bytes num 8 #f))])]
     [(Relocate size label rel?)
      (define cell
        (Reloc-Cell label (fx+ (Context-offset ctx)
@@ -97,4 +122,3 @@
   (define (dump-ctx [ctx : Context])
     (subbytes (Context-buf ctx) 0 (Context-offset ctx)))
   (provide dump-ctx))
-  
