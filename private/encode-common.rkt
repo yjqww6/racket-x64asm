@@ -45,19 +45,19 @@
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib b00 #b100 #b101)
              disp)]
-    [(Mref size (and (rbp) r) #f #f)
+    [(Mref size (and (RBP) r) #f #f)
      (mod/rm reg-bits (Mref size r #f (Immediate 8 0)))]
     [(Mref _ (?Reg #:code code) #f disp)
      ;#:when (not (= code #b101))
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib (disp->mod disp) reg-bits code)
              #f disp)]
-    [(Mref _ #f (cons (and (?Reg #:code index) (not (rsp))) s) disp)
+    [(Mref _ #f (cons (and (?Reg #:code index) (not (RSP))) s) disp)
      (values (rex.rxb reg-bits index #b101)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
              (and disp (Imm-resize disp (ann 32 32))))]
-    [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (rsp))) s) disp)
+    [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (RSP))) s) disp)
      (values (rex.rxb reg-bits index base)
              (modrm/sib (disp->mod disp) reg-bits #b100)
              (modrm/sib (->scale s) index base)

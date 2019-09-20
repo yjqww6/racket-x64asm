@@ -18,25 +18,31 @@
 (define-struct-match ?GPR GPR name code size)
 (define-struct-match ?XMM XMM name code size)
 
+(begin-for-syntax 
+  (define-syntax-class reg
+    (pattern name:id
+             #:with up (datum->syntax
+                        #'name
+                        (string->symbol
+                         (string-upcase
+                          (symbol->string (syntax-e #'name))))))))
+
 (define-syntax (define-reg stx)
   (syntax-parse stx
-    [(_ T id:id code:number size:number)
+    [(_ T id:reg code:number size:number)
      #'(begin
-         (define reg (T 'id code (ann size size)))
-         (define-match-expander id
+         (define id (T 'id code (ann size size)))
+         (define-match-expander id.up
            (λ (stx)
              (syntax-case stx ()
-               [(_) #'(or (== reg eq?)
+               [(_) #'(or (== id eq?)
                           (Reg 'id code size))]
-               [(_ s) #'(and (id)
-                             (?Reg #:size s))]))
-           (λ (stx)
-             (syntax-case stx ()
-               [a (identifier? #'a) #'reg]))))]))
+               [(_ s) #'(and (id.up)
+                             (?Reg #:size s))]))))]))
 
 (define-syntax (define-gpr stx)
   (syntax-parse stx
-    [(_ [code:number n8:id n16:id n32:id n64:id ?P] ...)
+    [(_ [code:number n8:reg n16:reg n32:reg n64:reg ?P] ...)
      #'(begin
          (begin 
            (define-reg GPR n8 code 8)
@@ -50,7 +56,7 @@
                   #'(or (== n16 eq?)
                         (== n32 eq?)
                         (== n64 eq?)
-                        (n16) (n32) (n64))]
+                        (n16.up) (n32.up) (n64.up))]
                  [(_ s)
                   #'(and (?Reg #:size s) (?P))]))))
          ...)]))
@@ -81,7 +87,7 @@
 (define (reg-require-rex? [x : Reg])
   (match x
     [(?GPR #:size 64) #b1000]
-    [(or (spl) (bpl) (sil) (dil)) 0]
+    [(or (SPL) (BPL) (SIL) (DIL)) 0]
     [_ #f]))
 
 (define (reg-code-lowbits [x : Reg])
@@ -94,7 +100,7 @@
   (with-syntax ([((name code) ...)
                  (for/list ([i (in-range 16)])
                    #`(#,(format-id (syntax-local-introduce #'define-xmm)
-                                 "xmm~a" i)
+                                   "xmm~a" i)
                       #,i))])
     #'(begin
         (define name (XMM 'name code (ann 128 Size)))
