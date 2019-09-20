@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
 (require "assembler.rkt" "operand.rkt" "registers.rkt"
-         racket/set racket/match racket/fixnum)
+         racket/match racket/fixnum)
 (require/typed "unsafe.rkt"
                [allocate-executable-memory (Nonnegative-Fixnum -> Nonnegative-Fixnum)]
                [free-executable-memory (Nonnegative-Fixnum Nonnegative-Fixnum -> Void)]
@@ -10,22 +10,27 @@
 
 (define (ensure-no-unresolve [asm : Assembler])
   (let loop : Void
-    ([required (set)]
-     [labels (list->set (hash-keys (Assembler-global-labels asm)))]
+    ([required : (HashTable Label True) (hasheq)]
+     [labels (for/hasheq : (HashTable Label True)
+               ([k (in-hash-keys (Assembler-global-labels asm))])
+               (values k #t))]
      [ls (Assembler-contexts asm)])
     (match ls
       ['()
-       (define s (set-subtract required labels))
-       (unless (set-empty? s)
+       (define s
+         (for/fold : (HashTable Label True)
+           ([h required])
+           ([k (in-hash-keys labels)])
+           (hash-remove h k)))
+       (unless (hash-empty? s)
          (error 'emit-code! "unresolved references ~a" s))]
       [(cons c ls)
-       (loop (set-union (list->set
-                         (map Reloc-Cell-label
-                              (hash-keys (Context-label-required c))))
-                        required)
-             (set-union (list->set
-                         (hash-keys (Context-local-labels c)))
-                        labels)
+       (loop (for/fold ([h required])
+                       ([k (in-hash-keys (Context-label-required c))])
+               (hash-set h (Reloc-Cell-label k) #t))
+             (for/fold ([h labels])
+                       ([k (in-hash-keys (Context-local-labels c))])
+               (hash-set h k #t))
              ls)])))
 
 (define (emit-code! [asm : Assembler (current-assembler)])

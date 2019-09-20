@@ -148,3 +148,9 @@
   (time
    (for ([i (in-range 10000)])
      (generate))))
+
+(module+ profile
+  (define (p)
+    (generate)
+    (void))
+  (provide p))

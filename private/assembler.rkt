@@ -32,7 +32,7 @@
 
 (define (make-context [asm : Assembler (current-assembler)])
   (define ctx
-    (Context (make-bytes 15) 0 '() (make-bytes 64) 0 asm (make-hasheq) (make-hasheq)))
+    (Context (make-bytes 15) 0 '() (make-bytes 256) 0 asm (make-hasheq) (make-hasheq)))
   (set-Assembler-contexts! asm (cons ctx (Assembler-contexts asm)))
   ctx)
 
