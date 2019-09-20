@@ -14,9 +14,6 @@
 
 (define current-assembler (make-parameter (make-assembler)))
 
-(define current-context : (Parameterof (Option Context))
-  (make-parameter #f))
-
 (struct Reloc-Cell ([label : Label] [off : Nonnegative-Fixnum] [size : Size] [rel? : Boolean])
   #:transparent)
 

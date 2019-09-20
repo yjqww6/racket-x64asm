@@ -34,7 +34,7 @@
         body ...+)
      #'(with-labels (#:entry a l ...)
          (let ([c (make-context)])
-           (parameterize ([current-context c])
+           (with-ctx c
              (let ()
                (:! a)
                body ...)

@@ -2,11 +2,11 @@
 (require "encode.rkt" "cases2.rkt" "assembler.rkt" "dispatch.rkt"
          "registers.rkt" "operand.rkt"
          racket/match
-         (for-syntax racket/base syntax/parse syntax/name))
+         (for-syntax racket/base syntax/parse syntax/name racket/stxparam-exptime))
 
-(define (:! [l : Label] #:ctx [ctx : (Option Context) (current-context)])
-  (assert ctx)
-  (asm-label! ctx l))
+(define-ctx :!
+  (λ ([l : Label] #:ctx [ctx : Context])
+    (asm-label! ctx l)))
 (provide :!)
 
 
@@ -79,7 +79,7 @@
     (~@
      (define-syntax (prefix stx)
        (syntax-parse stx
-         [(_ (~alt (~optional (~seq #:ctx ctx) #:defaults ([ctx #'(assert (current-context))]))
+         [(_ (~alt (~optional (~seq #:ctx ctx) #:defaults ([ctx (syntax-parameter-value #'current-ctx)]))
                    others)
              (... ...))
           #'(let ([c ctx])
@@ -304,7 +304,7 @@
 (define-dispatch crc32
   [(Gy-Eb) (G-E: '(#x0f #x38 #xf0) #:mandatory-prefix #xf2)]
   [(Gd-Ew) (G-E: '(#x0f #x38 #xf1) #:mandatory-prefix #xf2
-                              #:override-operand-size (ann 16 Size))]
+                 #:override-operand-size (ann 16 Size))]
   [(Gy-Ey) (G-E: '(#x0f #x38 #xf1) #:mandatory-prefix #xf2)])
 
 (define-dispatch enter

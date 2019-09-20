@@ -11,7 +11,7 @@
     (syntax-rules ()
       [(_ body ...)
        (let ([c (make-context)])
-         (parameterize ([current-context c])
+         (with-ctx c
            (let ()
              body ...)
            (emit-code!)
@@ -168,7 +168,7 @@
   (check-equal?
    ((->intptr
      (with-labels #:captured (#:entry a)
-       (parameterize ([current-context (make-context)])
+       (with-ctx (make-context)
          (:! (label a))
          (xor rax rax)
          (mov rcx (imm32 32))
@@ -179,7 +179,7 @@
          (jmp (rel32 (label c)))
          (:! (label r))
          (ret))
-       (parameterize ([current-context (make-context)])
+       (with-ctx (make-context)
          (:! (label c))
          (cmp rcx (imm32 0))
          (je (rel32 (label r)))

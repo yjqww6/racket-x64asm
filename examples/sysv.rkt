@@ -26,7 +26,7 @@
   (parameterize ([current-assembler asm])
     (values
      (flfls
-      (parameterize ([current-context (make-context)])
+      (with-ctx (make-context)
         (with-labels (#:entry a l4 l7 l3 l1)
           (:! a)
           (test rdx rdx)
@@ -75,7 +75,7 @@
           (find-entry a))))
 
      (v->s
-      (parameterize ([current-context (make-context)])
+      (with-ctx (make-context)
         (with-labels (#:entry a l7 l5 l3 l1 l10 l8)
           (:! a)
           (test rsi rsi)

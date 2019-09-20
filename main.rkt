@@ -5,6 +5,7 @@
          "private/assembler.rkt"
          "private/operand.rkt"
          "private/registers.rkt"
+         "private/dispatch.rkt"
          )
 
 (provide (all-from-out "private/instruction.rkt"
@@ -13,6 +14,7 @@
                        "private/registers.rkt")
          current-assembler make-assembler reset-assembler!
          Assembler Assembler?
-         current-context make-context
+         make-context
          Context Context?
-         emit-code! find-entry)
+         emit-code! find-entry
+         with-ctx)

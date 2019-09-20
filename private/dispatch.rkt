@@ -17,10 +17,9 @@
        ...)]
     [(_ name [pred encoder] ...)
      (begin
-       (: name ([#:ctx (Option Context)] Operand * -> Void))
-       (define (name #:ctx [ctx (current-context)]
+       (: name (#:ctx Context Operand * -> Void))
+       (define (name #:ctx ctx
                      . ops)
-         (assert ctx)
          (match ops
            [pred (encoder ctx ops)] ...))
        (provide name))]))
@@ -48,10 +47,9 @@
                (define id
                  (syntax-local-lift-expression
                   #'(λ ([args : Encoder] ...)
-                      (: name ([#:ctx (Option Context)] Operand * -> Void))
-                      (define (name #:ctx [ctx (current-context)]
+                      (: name (#:ctx Context Operand * -> Void))
+                      (define (name #:ctx ctx
                                     . ops)
-                        (assert ctx)
                         (match ops
                           [pred (args ctx ops)] ...))
                       name)))
@@ -71,6 +69,41 @@
              #:attr (alias 1) '()))
   )
 
+(require racket/stxparam)
+
+(define-syntax-parameter current-ctx #f)
+
+(define-syntax with-ctx
+  (syntax-parser
+    [(_ id:id body ...)
+     #`(syntax-parameterize ([current-ctx #'#,(syntax-local-introduce #'id)])
+         body ...)]
+    [(_ expr body ...)
+     #`(let ([id expr])
+         (with-ctx id
+           body ...))]))
+
+(define-syntax define-ctx
+  (syntax-parser
+    [(_ name body)
+     #:with id (generate-temporary #'name)
+     #'(...
+        (begin
+          (define id body)
+          (define-syntax name
+            (syntax-parser
+              [(_ (~alt (~once (~seq #:ctx ctx))
+                        args)
+                  ...)
+               #'(id #:ctx ctx args ...)]
+              [(_ args ...)
+               #:do [(define par (syntax-parameter-value #'current-ctx))]
+               #:when par
+               #`(id #:ctx #,par args ...)]
+              [a
+               #:when (identifier? #'a)
+               #'id]))))]))
+
 (define-syntax (define-dispatch stx)
   (syntax-parse stx
     [(_ () r ...) #'(begin)]
@@ -79,13 +112,12 @@
      #:with id (make-dispatcher (syntax-local-introduce #'(p ...)))
      #:with (e ...) (generate-temporaries #'(encoder ...))
      #'(begin
-         (define-values (name.name p.name ...)
-           (let ([e encoder] ...)
-             (values
-              (id e ...)
-              (ann (λ (#:ctx [ctx (current-context)] . rst)
-                     (e (assert ctx) rst))
-                   (-> [#:ctx (Option Context)] Operand * Void))
-              ...)))
-         (define name.alias name.name) ...
+         (define e encoder) ...
+         (define-ctx name.name (id e ...))
+         (define-ctx p.name
+           (ann (λ (#:ctx ctx . rst)
+                  (e ctx rst))
+                (-> #:ctx Context Operand * Void)))
+         ...
+         (define-ctx name.alias name.name) ...
          (provide name.name p.name ... name.alias ...))]))
