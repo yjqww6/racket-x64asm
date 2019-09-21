@@ -7,6 +7,7 @@
          "private/operand-helper.rkt"
          "private/registers.rkt"
          "macros.rkt"
+         "typed.rkt"
          )
 
 (provide (all-from-out "private/instruction.rkt"
@@ -14,7 +15,8 @@
                        "private/operand.rkt"
                        "private/operand-helper.rkt"
                        "private/registers.rkt"
-                       "macros.rkt")
+                       "macros.rkt"
+                       "typed.rkt")
          current-assembler make-assembler reset-assembler!
          Assembler Assembler?
          current-context make-context
