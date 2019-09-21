@@ -46,7 +46,7 @@
      #'(begin
          (define-dispatch name
            [(Jb) (J: (cast (+ #x70 num) Byte))]
-           [(Jz) (J: (list #x0f (cast (+ #x80 num) Byte)))])
+           [(Jd) (J: (list #x0f (cast (+ #x80 num) Byte)))])
          ...)]))
 
 (define-syntax (define-cmovcc stx)
@@ -142,13 +142,13 @@
   [(Ev) (E: #xff #:/ 1)])
 
 (define-dispatch call
-  [(Jz) (J: #xe8)]
-  [(Ev) (E: #xff #:/ 2 #:default-64? #t)])
+  [(Jd) (J: #xe8)]
+  [(Eq) (E: #xff #:/ 2 #:default-64? #t)])
 
 (define-dispatch jmp
   [(Jb) (J: #xeb)]
-  [(Jz) (J: #xe9)]
-  [(Ev) (E: #xff #:/ 4 #:default-64? #t)])
+  [(Jd) (J: #xe9)]
+  [(Eq) (E: #xff #:/ 4 #:default-64? #t)])
 
 (define-dispatch ret
   ['() (just #"\xc3")]

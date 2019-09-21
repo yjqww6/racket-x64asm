@@ -360,7 +360,12 @@
     (check-equal?
      (vector-sum (build-vector 1000 (ann values (-> Index Index))))
      499500))
-
+  (check-equal?
+   (fib 40)
+   102334155)
+  (check-equal?
+   (fib2 40)
+   102334155)
   (reset-assembler!))
 
 

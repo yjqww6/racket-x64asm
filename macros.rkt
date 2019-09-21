@@ -9,9 +9,15 @@
 
 (define-syntax λ!
   (syntax-parser
-    [(_ cast:expr (~optional (~seq #:labels (l ...))
-                             #:defaults ([(l 1) '()]))
+    [(_ cast:expr
+        (~alt
+         (~optional (~seq #:labels (l ...))
+                    #:defaults ([(l 1) '()]))
+         (~optional (~seq #:assembler asm)
+                    #:defaults ([asm #'#f])))
+        ...
         body ...+)
+     #:with ret
      #'(with-labels (#:entry a l ...)
          (let ([c (make-context)])
            (parameterize ([current-context c])
@@ -19,7 +25,11 @@
                (:! a)
                body ...)
              (emit-code!)))
-         (cast (find-entry a)))]))
+         (cast (find-entry a)))
+     (if (syntax-e #'asm)
+         #'(parameterize ([current-assembler asm])
+             ret)
+         #'ret)]))
 
 (define-syntax define-λ!
   (syntax-parser
