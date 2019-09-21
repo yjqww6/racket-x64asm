@@ -413,4 +413,11 @@
     #"\x66\x41\x8C\xE3"
     #"\x8C\x28"
     #"\x41\x8C\xE3"
-    #"\x67\x65\x41\x8C\x23")))
+    #"\x67\x65\x41\x8C\x23"))
+  (check-equal?
+   (dump!
+    (push fs)
+    (push gs)
+    (pop gs)
+    (pop fs))
+   #"\x0F\xA0\x0F\xA8\x0F\xA9\x0F\xA1"))

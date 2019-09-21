@@ -299,4 +299,6 @@
   [Ev-1 (Ev (Immediate _ 1))]
   [Gv-S (list (G (v)) (? Seg?))]
   [Mw-S (list (Mref 16 _ _ _ _) (? Seg?))]
-  [S-Ew (list (? Seg?) (or (G 16) (Mref 16 _ _ _ #f)))])
+  [S-Ew (list (? Seg?) (or (G 16) (Mref 16 _ _ _ #f)))]
+  [FS- (list (FS))]
+  [GS- (list (GS))])
