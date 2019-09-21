@@ -223,7 +223,19 @@
 (define-values (flvector-add! vector-sum)
   (generate))
 
-(provide vector-sum flvector-add! fib fib2)
+(define-cast adder
+  #:type (Fixnum -> Fixnum)
+  #:ctype (_fun _int -> _int))
+
+(define (make-adder [init : Integer])
+  (λ! adder #:assembler (make-assembler) #:labels (d)
+      (mov rax (imm64 d))
+      (add (mref 32 rax + 1) edi)
+      (:! d)
+      (mov eax (imm32 init))
+      (ret)))
+
+(provide vector-sum flvector-add! fib fib2 make-adder)
 
 (module+ main
   (collect-garbage 'major)
