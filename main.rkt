@@ -4,6 +4,7 @@
          "private/emit.rkt"
          "private/assembler.rkt"
          "private/operand.rkt"
+         "private/operand-helper.rkt"
          "private/registers.rkt"
          "macros.rkt"
          )
@@ -11,6 +12,7 @@
 (provide (all-from-out "private/instruction.rkt"
                        "private/sse.rkt"
                        "private/operand.rkt"
+                       "private/operand-helper.rkt"
                        "private/registers.rkt"
                        "macros.rkt")
          current-assembler make-assembler reset-assembler!

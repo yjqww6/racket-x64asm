@@ -2,6 +2,7 @@
 (require (for-syntax racket/base syntax/parse)
          typed/racket/unsafe
          "private/operand.rkt"
+         "private/operand-helper.rkt"
          "private/assembler.rkt"
          "private/emit.rkt")
 

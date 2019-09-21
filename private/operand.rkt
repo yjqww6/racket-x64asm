@@ -1,8 +1,6 @@
 #lang typed/racket/base
 
-(provide (except-out (all-defined-out)
-                     with-labels-helper
-                     current-labels-target))
+(provide (all-defined-out))
 (require "registers.rkt" racket/match
          (for-syntax racket/base syntax/parse syntax/name))
 
@@ -55,58 +53,6 @@
     [(<= -128 num 127) (Immediate 8 num)]
     [else (Immediate 32 num)]))
 
-(define-syntax (mref stx)
-  (syntax-parse stx #:literals (+ - *)
-    [(_ size a + b * c)
-     #'(Mref size a (cons b (ann c Scale)) #f)]
-    [(_ size a + b * c + d)
-     #'(Mref size a (cons b (ann c Scale)) (or-imm d))]
-    [(_ size a + b * c - d)
-     #'(Mref size a (cons b (ann c Scale)) (or-imm (- d)))]
-    [(_ size b * c + d)
-     #'(Mref size #f (cons b (ann c Scale)) (or-imm d))]
-    [(_ size b * c - d)
-     #'(Mref size #f (cons b (ann c Scale)) (or-imm (- d)))]
-    [(_ size a + d:number)
-     #'(Mref size a #f (or-imm d))]
-    [(_ size a - d:number)
-     #'(Mref size a #f (or-imm (- d)))]
-    [(_ size a + d)
-     #'(let ([ts : Size size]
-             [ta a]
-             [td d])
-         (if (Reg? td)
-             (Mref ts ta (cons td (ann 1 Scale)) #f)
-             (Mref ts ta #f (or-imm td))))]
-    [(_ size b * c)
-     #'(Mref size #f (cons b (ann c Scale)) #f)]
-    [(_ size a)
-     #'(Mref size a #f #f)]))
-
-(define-syntax-rule (moff s num)
-  (Mref (ann s Size) #f #f (Immediate 64 num)))
-
-
-(require racket/stxparam)
-
-(define-syntax (label stx)
-  (syntax-parse stx
-    [(_)
-     #`(make-label '#,(syntax-local-infer-name stx) #t)]
-    [(_ a)
-     (define table (syntax-parameter-value #'current-labels-target))
-     (hash-ref! table (syntax-e #'a)
-                (λ () (syntax-local-lift-expression #'(make-label 'a #t))))]))
-
-(define-syntax (entry stx)
-  (syntax-parse stx
-    [(_)
-     #`(make-label '#,(syntax-local-infer-name stx) #f)]
-    [(_ a)
-     (define table (syntax-parameter-value #'current-labels-target))
-     (hash-ref! table (syntax-e #'a)
-                (λ () (syntax-local-lift-expression #'(make-label 'a #f))))]))
-
 (define (op-resize [op : Operand] [size : Size])
   (match op
     [(Mref s b is d) (Mref size b is d)]
@@ -115,37 +61,3 @@
      (unless (= size s)
        (error 'op-resize "unequal size ~a ~a" s size))
      op]))
-
-(define-syntax-parameter current-labels-target #f)
-
-(define-syntax (with-labels-helper stx)
-  (syntax-parse stx
-    [(_ body ...)
-     (local-expand/capture-lifts
-      #'(let () body ...)
-      'expression
-      '())]))
-
-(define-syntax (with-labels stx)
-  (syntax-parse stx
-    [(_ (~optional (~and cap #:captured) #:defaults ([cap #'#f]))
-        ((~alt (~seq #:entry e:id) l:id) ...) body ...)
-     (cond
-       [(syntax-e #'cap)
-        #`(let ()
-            (define e (entry)) ...
-            (define l (label)) ...
-            (syntax-parameterize
-                ([current-labels-target
-                  (make-hasheq
-                   (list (cons 'l #'l) ...
-                         (cons 'e #'e) ...))])
-              (with-labels-helper body ...))
-            )]
-       [else
-        #'(let ()
-            (define e (entry)) ...
-            (define l (label)) ...
-            (let ()
-              body
-              ...))])]))

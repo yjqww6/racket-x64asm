@@ -1,36 +1,30 @@
 #lang racket/base
 (require (for-syntax racket/base syntax/parse syntax/name)
-         racket/stxparam "operand.rkt")
+         racket/stxparam "operand.rkt" "registers.rkt"
+         (only-in typed/racket/base ann))
 (provide label entry with-labels mref moff)
   
 (define-syntax-rule (moff s num)
   (Mref s #f #f (Immediate 64 num)))
-  
+
 (define-syntax (mref stx)
   (syntax-parse stx #:literals (+ - *)
     [(_ size a + b * c)
-     #'(Mref size a (cons b c) #f)]
+     #'(Mref size a (cons b (ann c Scale)) #f)]
     [(_ size a + b * c + d)
-     #'(Mref size a (cons b c) (or-imm d))]
+     #'(Mref size a (cons b (ann c Scale)) (or-imm d))]
     [(_ size a + b * c - d)
-     #'(Mref size a (cons b c) (or-imm (- d)))]
+     #'(Mref size a (cons b (ann c Scale)) (or-imm (- d)))]
     [(_ size b * c + d)
-     #'(Mref size #f (cons b c) (or-imm d))]
+     #'(Mref size #f (cons b (ann c Scale)) (or-imm d))]
     [(_ size b * c - d)
-     #'(Mref size #f (cons b c) (or-imm (- d)))]
-    [(_ size a + d:number)
-     #'(Mref size a #f (or-imm d))]
-    [(_ size a - d:number)
-     #'(Mref size a #f (or-imm (- d)))]
+     #'(Mref size #f (cons b (ann c Scale)) (or-imm (- d)))]
     [(_ size a + d)
-     #'(let ([ts size]
-             [ta a]
-             [td d])
-         (if (Reg? td)
-             (Mref ts ta (cons td 1) #f)
-             (Mref ts ta #f (or-imm td))))]
+     #'(Mref size a #f (or-imm d))]
+    [(_ size a - d)
+     #'(Mref size a #f (or-imm (- d)))]
     [(_ size b * c)
-     #'(Mref size #f (cons b c) #f)]
+     #'(Mref size #f (cons b (ann c Scale)) #f)]
     [(_ size a)
      #'(Mref size a #f #f)]))
 

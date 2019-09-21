@@ -2,10 +2,10 @@
 
 (require "private/operand-helper.rkt"
          racket/require (for-syntax racket/base syntax/parse)
-         (subtract-in "main.rkt" "private/operand-helper.rkt")
+         "main.rkt"
          ffi/unsafe)
 
-(provide (all-from-out "private/operand-helper.rkt" "main.rkt")
+(provide (all-from-out "main.rkt")
          define-cast λ! define-λ!)
 
 (provide define-cast λ! define-λ!)

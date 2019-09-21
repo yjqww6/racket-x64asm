@@ -53,7 +53,7 @@
   (check-equal?
    (let ([a rdx])
      (dump!
-      (lea rax (mref 64 rdx + a))))
+      (lea rax (mref 64 rdx + a * 1))))
    #"\x48\x8d\x04\x12")
   
   (check-equal?
@@ -280,7 +280,7 @@
     (:! c)
     (cmp rcx rsi)
     (jge (rel8 b))
-    (crc32 eax (mref 8 rdi + rcx))
+    (crc32 eax (mref 8 rdi + rcx * 1))
     (inc rcx)
     (jmp (rel8 c))
     (:! b)
