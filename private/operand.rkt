@@ -55,6 +55,11 @@
     [(<= -128 num 127) (Immediate 8 num)]
     [else (Immediate 32 num)]))
 
+(define (or-imm32 [num : (U Imm Integer)]) : Imm
+  (cond
+    [(Imm? num) num]
+    [else (Immediate 32 num)]))
+
 (define (op-resize [op : Operand] [size : Size])
   (match op
     [(Mref s b is d seg) (Mref size b is d seg)]

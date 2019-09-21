@@ -425,4 +425,9 @@
     (push gs)
     (pop gs)
     (pop fs))
-   #"\x0F\xA0\x0F\xA8\x0F\xA9\x0F\xA1"))
+   #"\x0F\xA0\x0F\xA8\x0F\xA9\x0F\xA1")
+
+  (check-equal?
+   (dump!
+    (mov eax (mref 32 fs : - 4)))
+   #"\x64\x8B\x04\x25\xFC\xFF\xFF\xFF"))

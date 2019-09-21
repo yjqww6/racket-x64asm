@@ -22,14 +22,26 @@
          (~and (~seq index * scale)
                (~bind [base #'#f] [is #'(cons index (ann scale Scale))]))
          (~and base
-               (~bind [is #'#f])))
+               (~bind [is #'#f]))
+         (~and (~seq)
+               (~bind [base #'#f] [is #'#f])))
         (~optional
          (~or (~and (~seq + d)
-                    (~bind [disp #'(or-imm d)]))
+                    (~bind [disp #'d]))
               (~and (~seq - d)
-                    (~bind [disp #'(or-imm (- d))])))
+                    (~bind [disp #'(- d)])))
          #:defaults ([disp #'#f])))
-     #'(Mref size base is disp seg)]))
+     #:do [(define base? (syntax-e #'base))
+           (define is? (syntax-e #'is))
+           (define disp? (syntax-e #'disp))]
+     #:when (or base? is? disp?)
+     (cond
+       [(and (not is?) (not base?))
+        #'(Mref size #f #f (or-imm32 disp) seg)]
+       [disp?
+        #'(Mref size base is (or-imm disp) seg)]
+       [else
+        #'(Mref size base is #f seg)])]))
 
 (define-syntax (label stx)
   (syntax-parse stx
