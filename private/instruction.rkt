@@ -67,24 +67,6 @@
            [(Eb) (E: (list #x0f (cast (+ #x90 num) Byte)))])
          ...)]))
 
-;;treat them as instructions ...
-(define-syntax-rule (define-prefix b prefix ...)
-  (begin
-    (~@
-     (define-syntax (prefix stx)
-       (syntax-parse stx
-         [(_ (~alt (~optional (~seq #:ctx ctx) #:defaults ([ctx #'(assert (current-context))]))
-                   others)
-             (... ...))
-          #'(let ([c ctx])
-              (asm-byte! c b)
-              (others (... ...) #:ctx c))]))
-     (provide prefix))
-    ...))
-(define-prefix #xf0 lock)
-(define-prefix #xf2 repne repnz)
-(define-prefix #xf3 rep repe repz)
-
 (define-group-1
   [add #x00 0]
   [adc #x10 2]

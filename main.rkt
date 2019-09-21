@@ -6,6 +6,7 @@
          "private/operand.rkt"
          "private/operand-helper.rkt"
          "private/registers.rkt"
+         "private/prefix.rkt"
          "macros.rkt"
          "typed.rkt"
          )
@@ -15,6 +16,7 @@
                        "private/operand.rkt"
                        "private/operand-helper.rkt"
                        "private/registers.rkt"
+                       "private/prefix.rkt"
                        "macros.rkt"
                        "typed.rkt")
          current-assembler make-assembler reset-assembler!
