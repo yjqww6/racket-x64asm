@@ -296,4 +296,7 @@
   [Ed-V (list (E 32) (V))]
   [V-GdMw-Ib (list (V) (or (G 32) (M 16)) (I 8))]
   [Eb-1 (Eb (Immediate _ 1))]
-  [Ev-1 (Ev (Immediate _ 1))])
+  [Ev-1 (Ev (Immediate _ 1))]
+  [Gv-S (list (G (v)) (? Seg?))]
+  [Mw-S (list (Mref 16 _ _ _ _) (? Seg?))]
+  [S-Ew (list (? Seg?) (or (G 16) (Mref 16 _ _ _ #f)))])

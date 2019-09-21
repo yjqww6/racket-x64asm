@@ -13,7 +13,7 @@
 
 (struct GPR Reg ())
 (struct XMM Reg ())
-(struct Seg Reg ())
+(struct Seg Reg ([prefix : Byte]))
 
 (define-struct-match ?Reg Reg name code size)
 (define-struct-match ?GPR GPR name code size)
@@ -30,14 +30,14 @@
 
 (define-syntax (define-reg stx)
   (syntax-parse stx
-    [(_ T id:reg code:number size:number)
+    [(_ T id:reg code:number size:number other ...)
      #'(begin
-         (define id (T 'id code (ann size size)))
+         (define id (T 'id code (ann size size) other ...))
          (define-match-expander id.up
            (λ (stx)
              (syntax-case stx ()
                [(_) #'(or (== id eq?)
-                          (T 'id code size))]
+                          (T 'id code size other ...))]
                [(_ s) #'(and (id.up)
                              (?Reg #:size s))]))))]))
 
@@ -109,16 +109,16 @@
 
 (define-xmm)
 
-(define-syntax-rule (define-seg [id code] ...)
+(define-syntax-rule (define-seg [id code prefix] ...)
   (begin
-    (define-reg Seg id code 16)
+    (define-reg Seg id code 16 prefix)
     ...))
 
 (define-seg
-  ;[cs #x2e]
-  ;[ds #x3e]
-  ;[es #x36]
-  [fs #x64]
-  [gs #x65]
-  ;[ss #x36]
+  ;[cs 1 #x2e]
+  ;[ds 3 #x3e]
+  ;[es 0 #x36]
+  [fs 4 #x64]
+  [gs 5 #x65]
+  ;[ss 2 #x36]
   )

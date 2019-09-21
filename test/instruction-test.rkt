@@ -398,8 +398,19 @@
    (dump!
     (mov al (moff 8 gs : 12))
     (mov rax (moff 64 gs : 12))
-    (mov rax (mref 64 fs : rax + rbx * 1 + 5)))
+    (mov rax (mref 64 fs : rax + rbx * 1 + 5))
+    (mov gs (mref 16 rax))
+    (mov r11w fs)
+    (mov (mref 16 rax) gs)
+    (mov r11d fs)
+    (mov (mref 16 gs : r11d) fs)
+    )
    (bytes-append
     #"\x65\xA0\x0C\x00\x00\x00\x00\x00\x00\x00"
     #"\x65\x48\xA1\x0C\x00\x00\x00\x00\x00\x00\x00"
-    #"\x64\x48\x8B\x44\x18\x05")))
+    #"\x64\x48\x8B\x44\x18\x05"
+    #"\x8E\x28"
+    #"\x66\x41\x8C\xE3"
+    #"\x8C\x28"
+    #"\x41\x8C\xE3"
+    #"\x67\x65\x41\x8C\x23")))

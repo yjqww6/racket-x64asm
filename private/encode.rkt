@@ -47,6 +47,12 @@
   (list (or (? Reg? b) (? Mref? b)) (? Reg? a))
   encode-common a b #f #:override-operand-size override-operand-size)
 
+(define-encoder (E-S:)
+  (list (and (or (?Reg #:size size) (Mref size _ _ _ _))
+             b)
+        (? Seg? a))
+  encode-common a b #f #:override-operand-size size)
+
 (define-encoder (E-G_:)
   (list (or (? Reg? b) (? Mref? b)) (? Reg? a) _)
   encode-common a b #f)
@@ -62,6 +68,10 @@
 
 (define-encoder (E_: #:/ [reg-field : Byte 0])
   (list (or (? Reg? b) (? Mref? b)) _)
+  encode-common reg-field b #f)
+
+(define-encoder (_E: #:/ [reg-field : Byte 0])
+  (list _ (or (? Reg? b) (? Mref? b)))
   encode-common reg-field b #f)
 
 (define-encoder (G-I: #:extend-opcode? [extend-opcode? : Boolean #f])

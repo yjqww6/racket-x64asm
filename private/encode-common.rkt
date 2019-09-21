@@ -82,7 +82,7 @@
     (asm-byte! ctx #x67))
 
   (when seg
-    (asm-byte! ctx (Reg-code seg)))
+    (asm-byte! ctx (Seg-prefix seg)))
 
   (when mandatory-prefix
     (asm-byte! ctx mandatory-prefix)))
