@@ -37,12 +37,12 @@
 (define-match-expander M
   (syntax-parser
     [(_ size)
-     #'(Mref size _ _ _)]))
+     #'(Mref size _ _ _ _)]))
 
 (define-match-expander E
   (syntax-parser
     [(_ size)
-     #'(or (G size) (Mref size _ _ (or #f (Imm 8) (Imm 32))))]))
+     #'(or (G size) (Mref size _ _ (or #f (Imm 8) (Imm 32)) _))]))
 
 (define-match-expander I
   (syntax-parser
@@ -58,7 +58,7 @@
 (define-match-expander O
   (syntax-parser
     [(_ size)
-     #'(Mref size #f #f (Imm 64))]))
+     #'(Offset size _ _)]))
 
 (define-match-expander V
   (syntax-parser
@@ -71,7 +71,7 @@
   (syntax-parser
     [(_ size)
      #'(or (V)
-           (Mref size _ _ (or #f (Imm 8) (Imm 32))))]))
+           (Mref size _ _ (or #f (Imm 8) (Imm 32)) _))]))
 
 (define-me
   [b 8]

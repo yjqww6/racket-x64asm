@@ -391,3 +391,15 @@
   
   (check-equal? (cv-index (cvector _int 0 0 2019 0 0) 2)
                 2019))
+
+
+(module+ test
+  (check-equal?
+   (dump!
+    (mov al (moff 8 gs : 12))
+    (mov rax (moff 64 gs : 12))
+    (mov rax (mref 64 fs : rax + rbx * 1 + 5)))
+   (bytes-append
+    #"\x65\xA0\x0C\x00\x00\x00\x00\x00\x00\x00"
+    #"\x65\x48\xA1\x0C\x00\x00\x00\x00\x00\x00\x00"
+    #"\x64\x48\x8B\x44\x18\x05")))

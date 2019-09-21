@@ -40,24 +40,24 @@
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib b11 reg-bits code)
              #f #f)]
-    [(Mref _ #f #f (and disp (Imm 32)))
+    [(Mref _ #f #f (and disp (Imm 32)) _)
      (values (rex.rxb reg-bits 0 0)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib b00 #b100 #b101)
              disp)]
-    [(Mref size (and (RBP) r) #f #f)
-     (mod/rm reg-bits (Mref size r #f (Immediate 8 0)))]
-    [(Mref _ (?Reg #:code code) #f disp)
+    [(Mref size (and (RBP) r) #f #f _)
+     (mod/rm reg-bits (Mref size r #f (Immediate 8 0) #f))]
+    [(Mref _ (?Reg #:code code) #f disp _)
      ;#:when (not (= code #b101))
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib (disp->mod disp) reg-bits code)
              #f disp)]
-    [(Mref _ #f (cons (and (?Reg #:code index) (not (RSP))) s) disp)
+    [(Mref _ #f (cons (and (?Reg #:code index) (not (RSP))) s) disp _)
      (values (rex.rxb reg-bits index #b101)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
              (and disp (Imm-resize disp (ann 32 32))))]
-    [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (RSP))) s) disp)
+    [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (RSP))) s) disp _)
      (values (rex.rxb reg-bits index base)
              (modrm/sib (disp->mod disp) reg-bits #b100)
              (modrm/sib (->scale s) index base)
@@ -70,6 +70,7 @@
                             [prefix-group-1 : (Option Byte)]
                             [operand-size : Size]
                             [addressing-size : Size]
+                            [seg : (Option Seg)]
                             [mandatory-prefix : (Option Byte) #f])
   (when prefix-group-1
     (asm-byte! ctx prefix-group-1))
@@ -80,6 +81,9 @@
   (when (= addressing-size 32)
     (asm-byte! ctx #x67))
 
+  (when seg
+    (asm-byte! ctx (Reg-code seg)))
+
   (when mandatory-prefix
     (asm-byte! ctx mandatory-prefix)))
 
@@ -87,14 +91,14 @@
   (match* (G E)
     [((?Reg #:size size) _) size]
     [(_ (?Reg #:size size)) size]
-    [(_ (Mref size _ _ _)) size]
+    [(_ (Mref size _ _ _ _)) size]
     [(_ _) (error 'find-operand-size "unknown operand size: ~a" E)]))
 
 (define (find-addressing-size [E : (U Reg Mref)]) : Size
   (match E
-    [(Mref _ (?Reg #:size size) #f _) size]
-    [(Mref _ #f (cons (?Reg #:size size) _) _) size]
-    [(Mref _ (?Reg #:size size) (cons (?Reg #:size size) _) _) size]
+    [(Mref _ (?Reg #:size size) #f _ _) size]
+    [(Mref _ #f (cons (?Reg #:size size) _) _ _) size]
+    [(Mref _ (?Reg #:size size) (cons (?Reg #:size size) _) _ _) size]
     [_ (ann 64 Size)]))
 
 (define (encode-common [ctx : Context]
@@ -122,7 +126,9 @@
       [else (void)]))
   
   (asm-legacy-prefix! ctx prefix-group-1 operand-size
-                      addressing-size mandatory-prefix)
+                      addressing-size
+                      (and (Mref? E) (Mref-seg E))
+                      mandatory-prefix)
 
   (define code
     (if (Reg? G)
@@ -153,6 +159,7 @@
                         #:opcode-prefix [opcode-prefix : (Option Bytes) #f]
                         #:extend-opcode? [extend-opcode? : Boolean #f]
                         #:default-64? [default-64? : Boolean #f]
+                        #:seg [seg : (Option Seg) #f]
                         )
   (define operand-size
     (cond
@@ -162,7 +169,7 @@
   (define addressing-size (ann 64 Size))
   
   (asm-legacy-prefix! ctx prefix-group-1 operand-size
-                      addressing-size mandatory-prefix)
+                      addressing-size seg mandatory-prefix)
 
   (when G
     (define w (if (and (= operand-size 64) (not default-64?))

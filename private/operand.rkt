@@ -14,11 +14,13 @@
 (struct Imm ([size : Size]) #:transparent)
 (struct Immediate Imm ([num : Integer]) #:transparent)
 (struct Relocate Imm ([label : Label] [rel? : Boolean]) #:transparent)
+(struct Offset Imm ([num : Integer] [seg : (Option Seg)]) #:transparent)
 
 (struct Mref ([size : Size]
               [base : (Option Reg)]
               [index+scale : (Option (Pairof Reg Scale))]
-              [disp : (Option Imm)]) #:transparent)
+              [disp : (Option Imm)]
+              [seg : (Option Seg)]) #:transparent)
 
 (define (Imm-resize [imm : Imm] [size : Size])
   (match imm
@@ -55,7 +57,7 @@
 
 (define (op-resize [op : Operand] [size : Size])
   (match op
-    [(Mref s b is d) (Mref size b is d)]
+    [(Mref s b is d seg) (Mref size b is d seg)]
     [(Imm _) (Imm-resize op size)]
     [(?Reg #:size s)
      (unless (= size s)

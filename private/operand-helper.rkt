@@ -4,29 +4,32 @@
          (only-in typed/racket/base ann))
 (provide label entry with-labels mref moff)
   
-(define-syntax-rule (moff s num)
-  (Mref s #f #f (Immediate 64 num)))
+(define-syntax (moff stx) 
+  (syntax-parse stx #:datum-literals (:) 
+    [(_ s (~optional (~seq seg :)
+                     #:defaults ([seg #'#f]))
+        num) 
+     #'(Offset s num seg)]))
 
 (define-syntax (mref stx)
-  (syntax-parse stx #:literals (+ - *)
-    [(_ size a + b * c)
-     #'(Mref size a (cons b (ann c Scale)) #f)]
-    [(_ size a + b * c + d)
-     #'(Mref size a (cons b (ann c Scale)) (or-imm d))]
-    [(_ size a + b * c - d)
-     #'(Mref size a (cons b (ann c Scale)) (or-imm (- d)))]
-    [(_ size b * c + d)
-     #'(Mref size #f (cons b (ann c Scale)) (or-imm d))]
-    [(_ size b * c - d)
-     #'(Mref size #f (cons b (ann c Scale)) (or-imm (- d)))]
-    [(_ size a + d)
-     #'(Mref size a #f (or-imm d))]
-    [(_ size a - d)
-     #'(Mref size a #f (or-imm (- d)))]
-    [(_ size b * c)
-     #'(Mref size #f (cons b (ann c Scale)) #f)]
-    [(_ size a)
-     #'(Mref size a #f #f)]))
+  (syntax-parse stx #:datum-literals (+ - * :)
+    [(_ size
+        (~optional (~seq seg :)
+                   #:defaults ([seg #'#f]))
+        (~or
+         (~and (~seq base + index * scale)
+               (~bind [is #'(cons index (ann scale Scale))]))
+         (~and (~seq index * scale)
+               (~bind [base #'#f] [is #'(cons index (ann scale Scale))]))
+         (~and base
+               (~bind [is #'#f])))
+        (~optional
+         (~or (~and (~seq + d)
+                    (~bind [disp #'(or-imm d)]))
+              (~and (~seq - d)
+                    (~bind [disp #'(or-imm (- d))])))
+         #:defaults ([disp #'#f])))
+     #'(Mref size base is disp seg)]))
 
 (define-syntax (label stx)
   (syntax-parse stx
