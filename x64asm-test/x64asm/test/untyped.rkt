@@ -1,5 +1,5 @@
 #lang racket
-(require "../untyped.rkt" ffi/unsafe)
+(require x64asm/untyped ffi/unsafe)
 
 (define-cast ->int
   #:ctype (_fun -> _int))

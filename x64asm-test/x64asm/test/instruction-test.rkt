@@ -1,8 +1,8 @@
 #lang typed/racket/base
 
 (module+ test
-  (require "../main.rkt"
-           (submod "../private/assembler.rkt" debug))
+  (require x64asm
+           (submod x64asm/private/assembler debug))
   
   (require (for-syntax racket/base)
            typed/racket/unsafe)

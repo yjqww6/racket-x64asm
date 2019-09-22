@@ -1,5 +1,5 @@
 #lang typed/racket
-(require "../main.rkt"
+(require x64asm
          typed/racket/unsafe)
 
 (define-cast flfls

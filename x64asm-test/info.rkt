@@ -1,6 +1,6 @@
 #lang info
-(define collection "racket-x64asm")
-(define deps '("base" "typed-racket-lib"))
+(define collection 'multi)
+(define deps '("x64asm-lib" "base" "typed-racket-lib"))
 (define build-deps '("rackunit-typed" "rackunit-lib" "math-lib"))
 (define pkg-desc "a simple x64 assembler written in typed/racket")
 (define version "0.1")
