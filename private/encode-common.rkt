@@ -15,8 +15,8 @@
   (define (disp->mod disp)
     (match disp
       [#f b00]
-      [(Imm 8) b01]
-      [(Imm 32) b10]))
+      [(Imm 8 _) b01]
+      [(Imm 32 _) b10]))
 
   (define (rex.rxb [r : Byte] [x : Byte] [b : Byte]) : Byte
     (bitwise-ior (arithmetic-shift (bitwise-and r #b1000) -1)
@@ -40,13 +40,13 @@
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib b11 reg-bits code)
              #f #f)]
-    [(Mref _ #f #f (and disp (Imm 32)) _)
+    [(Mref _ #f #f (and disp (Imm 32 _)) _)
      (values (rex.rxb reg-bits 0 0)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib b00 #b100 #b101)
              disp)]
     [(Mref size (and (RBP) r) #f #f _)
-     (mod/rm reg-bits (Mref size r #f (Immediate 8 0) #f))]
+     (mod/rm reg-bits (Mref size r #f (Immediate 8 #f 0) #f))]
     [(Mref _ (?Reg #:code code) #f disp _)
      ;#:when (not (= code #b101))
      (values (rex.rxb reg-bits 0 code)
@@ -56,7 +56,13 @@
      (values (rex.rxb reg-bits index #b101)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
-             (and disp (Imm-resize disp (ann 32 32))))]
+             (match disp
+               [(Imm 32 _) disp]
+               [#f (Immediate 32 #f 0)]
+               [(Immediate 8 #f num)
+                (Immediate 32 #f num)]
+               [else
+                (error 'encode-common "cannot encode: requires disp32: ~a" disp)]))]
     [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (RSP))) s) disp _)
      (values (rex.rxb reg-bits index base)
              (modrm/sib (disp->mod disp) reg-bits #b100)

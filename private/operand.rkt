@@ -11,10 +11,15 @@
 (define (make-label [name : Symbol] [local? : Boolean #t])
   (Label name local? (box #f)))
 
-(struct Imm ([size : Size]) #:transparent)
+(struct Imm ([size : Size] [self : (Option Label)]) #:transparent)
 (struct Immediate Imm ([num : Integer]) #:transparent)
-(struct Relocate Imm ([label : Label] [rel? : Boolean]) #:transparent)
-(struct Offset Imm ([num : Integer] [seg : (Option Seg)]) #:transparent)
+(struct Relocate Imm () #:transparent)
+(struct Relocate:Label Relocate
+  ([target : Label] [rel? : Boolean]) #:transparent)
+(struct Relocate:Custom Relocate
+  ([proc : ((Label -> Nonnegative-Fixnum) -> Integer)])
+  #:transparent)
+(struct Offset ([size : Size] [num : Imm] [seg : (Option Seg)]) #:transparent)
 
 (struct Mref ([size : Size]
               [base : (Option Reg)]
@@ -22,18 +27,13 @@
               [disp : (Option Imm)]
               [seg : (Option Seg)]) #:transparent)
 
-(define (Imm-resize [imm : Imm] [size : Size])
-  (match imm
-    [(Immediate _ num) (Immediate size num)]
-    [(Relocate _ l r) (Relocate size l r)]))
-
-(define-type Operand (U Reg Mref Imm))
+(define-type Operand (U Reg Mref Imm Offset))
 
 (define (make-imm [n : Size])
-  (λ ([num : (U Integer Label)])
+  (λ ([num : (U Integer Label)] #:! [self! : (Option Label) #f])
     (if (Label? num)
-        (Relocate n num #f)
-        (Immediate n num))))
+        (Relocate:Label n self! num #f)
+        (Immediate n self! num))))
 
 (define imm8 (make-imm (ann 8 Size)))
 
@@ -43,28 +43,28 @@
 
 (define imm64 (make-imm (ann 64 Size)))
 
-(define (rel8 [l : Label])
-  (Relocate 8 l #t))
+(define (rel8 [l : Label] #:! [self! : (Option Label) #f])
+  (Relocate:Label 8 self! l #t))
 
-(define (rel32 [l : Label])
-  (Relocate 32 l #t))
+(define (rel32 [l : Label] #:! [self! : (Option Label) #f])
+  (Relocate:Label 32 self! l #t))
 
 (define (or-imm [num : (U Imm Integer)]) : Imm
   (cond
     [(Imm? num) num]
-    [(<= -128 num 127) (Immediate 8 num)]
-    [else (Immediate 32 num)]))
+    [(<= -128 num 127) (Immediate 8 #f num)]
+    [else (Immediate 32 #f num)]))
 
 (define (or-imm32 [num : (U Imm Integer)]) : Imm
   (cond
     [(Imm? num) num]
-    [else (Immediate 32 num)]))
+    [else (Immediate 32 #f num)]))
 
-(define (op-resize [op : Operand] [size : Size])
-  (match op
-    [(Mref s b is d seg) (Mref size b is d seg)]
-    [(Imm _) (Imm-resize op size)]
-    [(?Reg #:size s)
-     (unless (= size s)
-       (error 'op-resize "unequal size ~a ~a" s size))
-     op]))
+(define (or-imm64 [num : (U Imm Integer)]) : Imm
+  (cond
+    [(Imm? num) num]
+    [else (Immediate 64 #f num)]))
+
+(define (latent-imm [size : Size] [proc : ((Label -> Nonnegative-Fixnum) -> Integer)]
+                    #:! [self! : (Option Label) #f])
+  (Relocate:Custom size self! proc))

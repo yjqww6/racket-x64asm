@@ -14,11 +14,12 @@
          (~optional (~seq #:labels (l ...))
                     #:defaults ([(l 1) '()]))
          (~optional (~seq #:assembler asm)
-                    #:defaults ([asm #'#f])))
+                    #:defaults ([asm #'#f]))
+         (~optional (~and #:captured cap)))
         ...
         body ...+)
      #:with ret
-     #'(with-labels (#:entry a l ...)
+     #'(with-labels (~? cap) (#:entry a l ...)
          (let ([c (make-context)])
            (parameterize ([current-context c])
              (let ()

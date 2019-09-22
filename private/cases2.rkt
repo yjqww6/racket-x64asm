@@ -37,28 +37,27 @@
 (define-match-expander M
   (syntax-parser
     [(_ size)
-     #'(Mref size _ _ _ _)]))
+     #'(Mref size _ _ (or #f (Imm 8 _) (Imm 32 _)) _)]))
 
 (define-match-expander E
   (syntax-parser
     [(_ size)
-     #'(or (G size) (Mref size _ _ (or #f (Imm 8) (Imm 32)) _))]))
+     #'(or (G size) (M size))]))
 
 (define-match-expander I
   (syntax-parser
     [(_ size)
-     #'(or (Immediate size _)
-           (Relocate size _ #f))]))
+     #'(Imm size _)]))
 
 (define-match-expander J
   (syntax-parser
     [(_ size)
-     #'(or (Relocate size _ #t) (Immediate size _))]))
+     #'(Imm size _)]))
 
 (define-match-expander O
   (syntax-parser
     [(_ size)
-     #'(Offset size _ _)]))
+     #'(Offset size (Imm 64 _) _)]))
 
 (define-match-expander V
   (syntax-parser
@@ -71,7 +70,7 @@
   (syntax-parser
     [(_ size)
      #'(or (V)
-           (Mref size _ _ (or #f (Imm 8) (Imm 32)) _))]))
+           (M size))]))
 
 (define-me
   [b 8]
@@ -295,8 +294,8 @@
   [Eq-V (list (E 64) (V))]
   [Ed-V (list (E 32) (V))]
   [V-GdMw-Ib (list (V) (or (G 32) (M 16)) (I 8))]
-  [Eb-1 (Eb (Immediate _ 1))]
-  [Ev-1 (Ev (Immediate _ 1))]
+  [Eb-1 (Eb (Immediate _ #f 1))]
+  [Ev-1 (Ev (Immediate _ #f 1))]
   [Gv-S (list (G (v)) (? Seg?))]
   [Mw-S (list (Mref 16 _ _ _ _) (? Seg?))]
   [S-Ew (list (? Seg?) (or (G 16) (Mref 16 _ _ _ #f)))]

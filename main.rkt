@@ -23,4 +23,4 @@
          Assembler Assembler?
          current-context make-context
          Context Context?
-         emit-code! find-entry :!)
+         emit-code! find-entry :! data!)

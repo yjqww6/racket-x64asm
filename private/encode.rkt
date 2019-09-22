@@ -84,11 +84,11 @@
 
 (define-encoder (G-O: #:extend-opcode? [extend-opcode? : Boolean #f])
   (list (? Reg? a) (Offset _ num seg))
-  encode-common2 a (imm64 num) #:extend-opcode? extend-opcode? #:seg seg)
+  encode-common2 a num #:extend-opcode? extend-opcode? #:seg seg)
 
 (define-encoder (O-G: #:extend-opcode? [extend-opcode? : Boolean #f])
   (list (Offset _ num seg) (? Reg? a))
-  encode-common2 a (imm64 num) #:extend-opcode? extend-opcode? #:seg seg)
+  encode-common2 a num #:extend-opcode? extend-opcode? #:seg seg)
 
 (define-encoder (G: #:extend-opcode? [extend-opcode? : Boolean #f])
   (list (? Reg? a))

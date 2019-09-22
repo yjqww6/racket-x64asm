@@ -230,12 +230,32 @@
 (define (make-adder [init : Integer])
   (λ! adder #:assembler (make-assembler) #:labels (d)
       (mov rax (imm64 d))
-      (add (mref 32 rax + 1) edi)
-      (:! d)
-      (mov eax (imm32 init))
+      (add (mref 32 rax) edi)
+      (mov eax (imm32 init #:! d))
       (ret)))
 
-(provide vector-sum flvector-add! fib fib2 make-adder)
+(define-cast adder-get
+  #:type (-> Fixnum)
+  #:ctype (_fun -> _int))
+
+(define (make-adder/get [init : Integer])
+  (parameterize* ([current-assembler (make-assembler)]
+                  [current-context (make-context)])
+    (with-labels #:captured ()
+      (:! (entry inc))
+      (mov rax (imm64 (label d)))
+      (add (mref 32 rax) edi)
+      (mov eax (imm32 init #:! (label d)))
+      (ret)
+      (:! (entry get))
+      (mov eax (moff 32 (imm64 (label d))))
+      (ret)
+      (emit-code!)
+      (values (adder (find-entry (entry inc)))
+              (adder-get (find-entry (entry get)))))))
+
+
+(provide vector-sum flvector-add! fib fib2 make-adder make-adder/get)
 
 (module+ main
   (collect-garbage 'major)

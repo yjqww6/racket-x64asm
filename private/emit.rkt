@@ -71,6 +71,18 @@
           ;may not fit
           (define b (integer->integer-bytes num (fxquotient size 8) #t))
           (bytes-copy! (Context-buf (car ctx)) off b)]))
+
+     (define (finder [l : Label])
+       (hash-ref labels l))
+
+     (for* ([ctx (in-list contexts)]
+            [reloc (in-list (Context-custom-relocs (car ctx)))])
+       (match reloc
+         [(Reloc-Custom size off proc)
+          (define num (proc finder))
+          (define b (integer->integer-bytes num (fxquotient size 8) #t))
+          (bytes-copy! (Context-buf (car ctx)) off b)]))
+     
      (set-Assembler-pages! asm (append allocated (Assembler-pages asm)))
      (set! allocated '())
 

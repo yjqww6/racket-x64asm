@@ -19,6 +19,7 @@
 
 (struct Reloc-Cell ([label : Label] [off : Nonnegative-Fixnum] [size : Size] [rel? : Boolean])
   #:transparent)
+(struct Reloc-Custom ([size : Size] [off : Nonnegative-Fixnum] [proc : ((Label -> Nonnegative-Fixnum) -> Integer)]))
 
 (struct Context ([inst-cache : Bytes]
                  [inst-size : Nonnegative-Fixnum]
@@ -26,28 +27,34 @@
                  [buf : Bytes]
                  [offset : Nonnegative-Fixnum]
                  [asm : Assembler]
+                 [custom-relocs : (Listof Reloc-Custom)]
                  [local-labels : (HashTable Label Nonnegative-Fixnum)]
                  [label-required : (HashTable Reloc-Cell Nonnegative-Fixnum)])
   #:mutable)
 
 (define (make-context [asm : Assembler (current-assembler)])
   (define ctx
-    (Context (make-bytes 15) 0 '() (make-bytes 256) 0 asm (make-hasheq) (make-hasheq)))
+    (Context (make-bytes 15) 0 '() (make-bytes 256) 0 asm '() (make-hasheq) (make-hasheq)))
   (set-Assembler-contexts! asm (cons ctx (Assembler-contexts asm)))
   ctx)
+
+(define (enlarge-buf [ctx : Context]
+                     [size : Nonnegative-Fixnum])
+  (let ([old (Context-buf ctx)])
+    (cond
+      [(> size (bytes-length old))
+       (define b (make-bytes (max (fx* 2 (bytes-length old))
+                                  size)))
+       (bytes-copy! b 0 old)
+       (set-Context-buf! ctx b)
+       b]
+      [else old])))
 
 (define (finish-instruction! [ctx : Context])
   (define len (Context-inst-size ctx))
   (define off (Context-offset ctx))
   (define buf
-    (let ([old (Context-buf ctx)])
-      (cond
-        [(> (fx+ len off) (bytes-length old))
-         (define b (make-bytes (fx* 2 (bytes-length old))))
-         (bytes-copy! b 0 old)
-         (set-Context-buf! ctx b)
-         b]
-        [else old])))
+    (enlarge-buf ctx (fx+ len off)))
   (bytes-copy! buf off (Context-inst-cache ctx) 0 len)
   (set-Context-offset! ctx (fx+ off len))
   (set-Context-inst-size! ctx 0)
@@ -86,29 +93,34 @@
   (hash-set! (Context-local-labels ctx) l (Context-offset ctx)))
 
 (define (asm-imm! [ctx : Context] [imm : Imm])
+  (define self (Imm-self imm))
+  (when self
+    (hash-set! (Context-local-labels ctx) self
+               (fx+ (Context-offset ctx)
+                    (Context-inst-size ctx))))
   (match imm
-    [(Immediate 8 num)
+    [(Immediate 8 _ num)
      #:when (<= -128 num 255)
      (asm-byte! ctx (fxand num #xff))]
-    [(Immediate 16 num)
+    [(Immediate 16 _ num)
      #:when (<= (- (expt 2 15)) num (- (expt 2 16) 1))
      (asm-byte*! ctx
                  (fxand num #xff)
                  (fxand (fxrshift num 8) #xff))]
-    [(Immediate 32 num)
+    [(Immediate 32 _ num)
      #:when (<= (- (expt 2 31)) num (- (expt 2 32) 1))
      (asm-byte*! ctx
                  (fxand num #xff)
                  (fxand (fxrshift num 8) #xff)
                  (fxand (fxrshift num 16) #xff)
                  (fxand (fxrshift num 24) #xff))]
-    [(Immediate 64 num)
+    [(Immediate 64 _ num)
      (cond
        [(< num 0)
         (asm-bytes! ctx (integer->integer-bytes num 8 #t))]
        [else
         (asm-bytes! ctx (integer->integer-bytes num 8 #f))])]
-    [(Relocate size label rel?)
+    [(Relocate:Label size _ label rel?)
      (define cell
        (Reloc-Cell label (fx+ (Context-offset ctx)
                               (Context-inst-size ctx))
@@ -116,11 +128,45 @@
      (set-Context-inst-relocs!
       ctx
       (cons cell (Context-inst-relocs ctx)))
-     (asm-bytes! ctx (make-bytes (fxquotient size 8)))]))
+     (asm-bytes! ctx (make-bytes (fxrshift size 3)))]
+    [(Relocate:Custom size _ proc)
+     (set-Context-custom-relocs!
+      ctx
+      (cons (Reloc-Custom size
+                          (fx+ (Context-offset ctx)
+                               (Context-inst-size ctx))
+                          proc)
+            (Context-custom-relocs ctx)))
+     (set-Context-inst-size! ctx
+                             (fx+ (fxrshift size 3)
+                                  (Context-inst-size ctx)))]))
 
 (define (:! [l : Label] #:ctx [ctx : (Option Context) (current-context)])
   (assert ctx)
   (asm-label! ctx l))
+
+(: data! ([#:ctx (Option Context)] (U Bytes Imm) * -> Void))
+(define (data! #:ctx [ctx (current-context)] . datum)
+  (assert ctx)
+  (let ()
+    (define len
+      (for/fold ([len : Nonnegative-Fixnum 0])
+                ([d (in-list datum)])
+        (cond
+          [(bytes? d) (fx+ len (bytes-length d))]
+          [else
+           (fx+ len (Imm-size d))])))
+    (define buf (enlarge-buf ctx (fx+ (Context-offset ctx) len)))
+    (for ([d (in-list datum)])
+      (cond
+        [(bytes? d)
+         (bytes-copy! buf (Context-offset ctx) d)
+         (set-Context-offset! ctx
+                              (fx+ (Context-offset ctx) (bytes-length d)))]
+        [else
+         (asm-imm! ctx d)
+         (finish-instruction! ctx)])))
+  )
 
 (module+ debug
   (define (dump-ctx [ctx : Context])

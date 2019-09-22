@@ -9,7 +9,7 @@
     [(_ s (~optional (~seq seg :)
                      #:defaults ([seg #'#f]))
         num) 
-     #'(Offset s num seg)]))
+     #'(Offset s (or-imm64 num) seg)]))
 
 (define-syntax (mref stx)
   (syntax-parse stx #:datum-literals (+ - * :)

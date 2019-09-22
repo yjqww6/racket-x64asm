@@ -371,7 +371,17 @@
        (a 1)
        (a 2)
        (a 3))
-     16))
+     16)
+    (check-equal?
+     (let-values ([(a b) (make-adder/get 10)])
+       (list 
+        (a 1)
+        (b)
+        (a 2)
+        (b)
+        (a 3)
+        (b)))
+     '(11 11 13 13 16 16)))
   
   (reset-assembler!))
 
@@ -438,3 +448,59 @@
    (dump!
     (mov eax (mref 32 fs : - 4)))
    #"\x64\x8B\x04\x25\xFC\xFF\xFF\xFF"))
+
+(module+ test
+  
+  (define-λ! f int->int #:captured
+    (mov rcx (imm64 (label data)))
+    (jmp (mref 64 rcx + rdi * 8))
+    (:! (label here))
+    (mov eax (imm32 100))
+    (ret)
+    (:! (label l1))
+    (mov eax (imm32 200))
+    (ret)
+    (:! (label l2))
+    (mov eax (imm32 300))
+    (ret)
+
+    (:! (label data))
+    (data!
+     (imm64 (label here))
+     (imm64 (label l1))
+     (imm64 (label l2))))
+
+  (define-λ! f2 int->int #:captured
+    (mov rdx (imm64 (label data)))
+    (xor rcx rcx)
+    (mov cl (mref 8 rdx + rdi * 1))
+    (mov rax (imm64 (label here)))
+    (add rax rcx)
+    (jmp rax)
+    (:! (label here))
+    (mov eax (imm32 100))
+    (ret)
+    (:! (label l1))
+    (mov eax (imm32 200))
+    (ret)
+    (:! (label l2))
+    (mov eax (imm32 300))
+    (ret)
+
+    (:! (label data))
+      
+    (define (dist [a : Label] [b : Label])
+      (latent-imm 8 (λ ([f : (Label -> Nonnegative-Fixnum)])
+                      (- (f b) (f a)))))
+    (data!
+     (imm8 0)
+     (dist (label here) (label l1))
+     (dist (label here) (label l2))))
+  
+  (unless (eq? (system-type) 'windows)
+    (check-equal?
+     (list (f 0) (f 1) (f 2))
+     '(100 200 300))
+    (check-equal?
+     (list (f2 0) (f2 1) (f2 2))
+     '(100 200 300))))
