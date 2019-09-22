@@ -164,7 +164,7 @@ Now there is a more complicated example(Using sysv call convention) for calculat
 }
 
 @defform[#:literals (+ - * :)
-         (mref size-expr maybe-seg-reg maybe-sib maybe-disp)
+         (mref size-expr maybe-seg maybe-sib maybe-disp)
          #:grammar
          [(maybe-seg (code:line)
                      (code:line seg-expr :))
@@ -189,7 +189,7 @@ Now there is a more complicated example(Using sysv call convention) for calculat
            [(imm64 [num (or/c integer? Label?)] [#:! self! (or/c #f Label?) #f]) Imm?])]{
  Creates an immediate number. When a label is given, its address will be used in generated code stream.
  
- When @racket[self!] is provided, it will point to this immediate number, which maybe useful for self-modifying code.
+ When @racket[self!] is provided, it will point to this immediate number, which may be useful for self-modifying code.
 }
 
 @defproc*[([(rel8 [l Label?] [#:! self! (or/c #f Label?) #f]) Imm?]
