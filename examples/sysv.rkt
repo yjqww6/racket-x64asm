@@ -4,11 +4,12 @@
 
 (define-cast flfls
   #:type (FlVector FlVector -> Void)
-  #:requires (racket/flonum)
-  #:ctype (_fun (a b) ::
-                (_pointer = (flvector->cpointer a))
-                (_pointer = (flvector->cpointer b))
-                [_size = (flvector-length b)] -> _void))
+  #:ctype (let ()
+            (local-require racket/flonum)
+            (_fun (a b) ::
+                  (_pointer = (flvector->cpointer a))
+                  (_pointer = (flvector->cpointer b))
+                  [_size = (flvector-length b)] -> _void)))
 
 (define-cast v->s
   #:type ((Vectorof Fixnum) -> Integer)

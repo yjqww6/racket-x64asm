@@ -8,14 +8,13 @@
   (syntax-parser
     [(_ name:id
         (~alt (~once (~seq #:ctype ctype))
-              (~optional (~seq #:requires (r ...)) #:defaults ([(r 1) '()]))
               (~once (~seq #:type T)))
         ...)
      #`(begin
          (module name racket/base
            (begin
              (require #,(datum->syntax #f 'racket/base)
-                      #,(datum->syntax #f 'ffi/unsafe) r ...)
+                      #,(datum->syntax #f 'ffi/unsafe))
              (define id
                #,(datum->syntax
                   #f

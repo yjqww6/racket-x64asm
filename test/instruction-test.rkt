@@ -399,8 +399,9 @@
   
   (define-cast cv->i
     #:type (CVector Index -> Integer)
-    #:requires (ffi/cvector)
-    #:ctype (_fun _cvector _size -> _int))
+    #:ctype (let ()
+              (local-require ffi/cvector)
+              (_fun _cvector _size -> _int)))
   (define-λ! cv-index cv->i
     (mov eax (mref 32
                    (if (eq? (system-type) 'windows)
