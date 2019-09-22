@@ -242,17 +242,17 @@
   (parameterize ([current-assembler (make-assembler)]
                  [current-context (make-context)])
     (with-labels #:captured ()
-      (:! (entry inc))
+      (:! (label inc))
       (mov rax (imm64 (label d)))
       (add (mref 32 rax) edi)
       (mov eax (imm32 init #:! (label d)))
       (ret)
-      (:! (entry get))
+      (:! (label get))
       (mov eax (moff 32 (imm64 (label d))))
       (ret)
       (emit-code!)
-      (values (adder (find-entry (entry inc)))
-              (adder-get (find-entry (entry get)))))))
+      (values (adder (label-addr (label inc)))
+              (adder-get (label-addr (label get)))))))
 
 
 (provide vector-sum flvector-add! fib fib2 make-adder make-adder/get)

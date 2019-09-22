@@ -167,7 +167,7 @@
   
   (check-equal?
    ((->intptr
-     (with-labels #:captured (#:entry a)
+     (with-labels #:captured ()
        (define c1 (make-context))
        (define c2 (make-context))
        (parameterize ([current-context c1])
@@ -189,7 +189,7 @@
          (dec rcx)
          (jmp (rel32 (label b))))
        (emit-code! (current-assembler) c1 (list c2))
-       (find-entry a))))
+       (label-addr (label a)))))
    32)
 
   (define-cast int->int
@@ -492,8 +492,9 @@
     (:! (label data))
       
     (define (dist [a : Label] [b : Label])
-      (latent-imm 8 (λ ([f : (Label -> Nonnegative-Fixnum)])
-                      (- (f b) (f a)))))
+      (latent-imm 8 (λ ()
+                      (- (label-addr b)
+                         (label-addr a)))))
     (data!
      (imm8 0)
      (dist (label here) (label l1))
@@ -519,5 +520,17 @@
                (define a (make-context))
                (define l (label))
                (jmp (imm64 l))
+               (emit-code! (current-assembler) a)))
+  (check-exn exn:fail?
+             (λ ()
+               (define a (make-context))
+               (define l (label))
+               (:! l #:ctx a)
+               (:! l #:ctx a)))
+  (check-exn exn:fail?
+             (λ ()
+               (define a (make-context))
+               (define l (label))
+               (jmp (rel8 l))
                (emit-code! (current-assembler) a)))
   )

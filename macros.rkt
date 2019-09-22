@@ -18,7 +18,7 @@
          (~optional (~and #:captured cap)))
         ...
         body ...+)
-     #'(with-labels (~? cap) (#:entry a l ...)
+     #'(with-labels (~? cap) (a l ...)
          (let ([c (make-context)]
                [e asm])
            (parameterize ([current-context c])
@@ -26,7 +26,7 @@
                (:! a)
                body ...)
              (emit-code! e c))
-           (cast (find-entry a e))))]))
+           (cast (label-addr a))))]))
 
 (define-syntax define-λ!
   (syntax-parser

@@ -4,12 +4,11 @@
          racket/match racket/fixnum racket/stxparam
          (for-syntax racket/base racket/syntax))
 
-(struct Assembler ([global-labels : (HashTable Label Nonnegative-Fixnum)]
-                   [pages : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))])
+(struct Assembler ([pages : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))])
   #:mutable)
 
 (define (make-assembler)
-  (Assembler (make-hasheq) '()))
+  (Assembler '()))
 
 (define current-assembler (make-parameter (make-assembler)))
 
@@ -18,7 +17,7 @@
 
 (struct Reloc-Cell ([label : Label] [off : Nonnegative-Fixnum] [size : Size] [rel? : Boolean])
   #:transparent)
-(struct Reloc-Custom ([size : Size] [off : Nonnegative-Fixnum] [proc : ((Label -> Nonnegative-Fixnum) -> Integer)]))
+(struct Reloc-Custom ([size : Size] [off : Nonnegative-Fixnum] [proc : (-> Integer)]))
 
 (struct Context ([inst-cache : Bytes]
                  [inst-size : Nonnegative-Fixnum]
@@ -84,7 +83,8 @@
   (set-Context-inst-size! ctx (fx+ start (bytes-length b))))
 
 (define (asm-label! [ctx : Context] [l : Label])
-  (assert (not (unbox (Label-assigned? l))))
+  (when (unbox (Label-assigned? l))
+    (error 'asm-label! "label has been assigned : ~a" l))
   (set-box! (Label-assigned? l) #t)
   (hash-set! (Context-local-labels ctx) l (Context-offset ctx)))
 

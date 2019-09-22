@@ -6,10 +6,12 @@
 
 (define-type Scale (U 1 2 4 8))
 
-(struct Label ([name : Symbol] [local? : Boolean] [assigned? : (Boxof Boolean)]) #:transparent)
+(struct Label ([name : Symbol]
+               [assigned? : (Boxof (U Boolean Nonnegative-Fixnum))])
+  #:transparent)
 
-(define (make-label [name : Symbol] [local? : Boolean #t])
-  (Label name local? (box #f)))
+(define (make-label [name : Symbol])
+  (Label name (box #f)))
 
 (struct Imm ([size : Size] [self : (Option Label)]) #:transparent)
 (struct Immediate Imm ([num : Integer]) #:transparent)
@@ -17,7 +19,7 @@
 (struct Relocate:Label Relocate
   ([target : Label] [rel? : Boolean]) #:transparent)
 (struct Relocate:Custom Relocate
-  ([proc : ((Label -> Nonnegative-Fixnum) -> Integer)])
+  ([proc : (-> Integer)])
   #:transparent)
 (struct Offset ([size : Size] [num : Imm] [seg : (Option Seg)]) #:transparent)
 
@@ -31,9 +33,13 @@
 
 (define (make-imm [n : Size])
   (λ ([num : (U Integer Label)] #:! [self! : (Option Label) #f])
-    (if (Label? num)
-        (Relocate:Label n self! num #f)
-        (Immediate n self! num))))
+    (cond
+      [(Label? num)
+       (define addr (unbox (Label-assigned? num)))
+       (if (fixnum? addr)
+           (Immediate n self! addr)
+           (Relocate:Label n self! num #f))]
+      [else (Immediate n self! num)])))
 
 (define imm8 (make-imm (ann 8 Size)))
 
@@ -65,6 +71,13 @@
     [(Imm? num) num]
     [else (Immediate 64 #f num)]))
 
-(define (latent-imm [size : Size] [proc : ((Label -> Nonnegative-Fixnum) -> Integer)]
+(define (latent-imm [size : Size] [proc : (-> Integer)]
                     #:! [self! : (Option Label) #f])
   (Relocate:Custom size self! proc))
+
+(define (label-addr [l : Label])
+  (define a (unbox (Label-assigned? l)))
+  (unless (fixnum? a)
+    (error 'label-addr
+           "label do not have a address: ~a" l))
+  a)

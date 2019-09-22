@@ -2,7 +2,7 @@
 (require (for-syntax racket/base syntax/parse syntax/name)
          racket/stxparam "operand.rkt" "registers.rkt"
          (only-in typed/racket/base ann))
-(provide label entry with-labels mref moff)
+(provide label with-labels mref moff)
   
 (define-syntax (moff stx) 
   (syntax-parse stx #:datum-literals (:) 
@@ -46,20 +46,11 @@
 (define-syntax (label stx)
   (syntax-parse stx
     [(_)
-     #`(make-label '#,(syntax-local-infer-name stx) #t)]
+     #`(make-label '#,(syntax-local-infer-name stx))]
     [(_ a)
      (define table (syntax-parameter-value #'current-labels-target))
      (hash-ref! table (syntax-e #'a)
-                (λ () (syntax-local-lift-expression #'(make-label 'a #t))))]))
-
-(define-syntax (entry stx)
-  (syntax-parse stx
-    [(_)
-     #`(make-label '#,(syntax-local-infer-name stx) #f)]
-    [(_ a)
-     (define table (syntax-parameter-value #'current-labels-target))
-     (hash-ref! table (syntax-e #'a)
-                (λ () (syntax-local-lift-expression #'(make-label 'a #f))))]))
+                (λ () (syntax-local-lift-expression #'(make-label 'a))))]))
 
 
 (define-syntax-parameter current-labels-target #f)
@@ -75,22 +66,19 @@
 (define-syntax (with-labels stx)
   (syntax-parse stx
     [(_ (~optional (~and cap #:captured) #:defaults ([cap #'#f]))
-        ((~alt (~seq #:entry e:id) l:id) ...) body ...)
+        (l:id ...) body ...)
      (cond
        [(syntax-e #'cap)
         #`(let ()
-            (define e (entry)) ...
             (define l (label)) ...
             (syntax-parameterize
                 ([current-labels-target
                   (make-hasheq
-                   (list (cons 'l #'l) ...
-                         (cons 'e #'e) ...))])
+                   (list (cons 'l #'l) ...))])
               (with-labels-helper body ...))
             )]
        [else
         #'(let ()
-            (define e (entry)) ...
             (define l (label)) ...
             (let ()
               body
