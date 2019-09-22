@@ -513,4 +513,11 @@
                (define a (make-context))
                (ret #:ctx a)
                (emit-code! (current-assembler) a)
-               (emit-code! (current-assembler) a))))
+               (emit-code! (current-assembler) a)))
+  (check-exn exn:fail?
+             (λ ()
+               (define a (make-context))
+               (define l (label))
+               (jmp (imm64 l))
+               (emit-code! (current-assembler) a)))
+  )
