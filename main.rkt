@@ -19,7 +19,7 @@
                        "private/prefix.rkt"
                        "macros.rkt"
                        "typed.rkt")
-         current-assembler make-assembler reset-assembler!
+         current-assembler make-assembler assembler-shutdown-all!
          Assembler Assembler?
          current-context make-context
          Context Context?

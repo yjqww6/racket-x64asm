@@ -14,23 +14,19 @@
          (~optional (~seq #:labels (l ...))
                     #:defaults ([(l 1) '()]))
          (~optional (~seq #:assembler asm)
-                    #:defaults ([asm #'#f]))
+                    #:defaults ([asm #'(current-assembler)]))
          (~optional (~and #:captured cap)))
         ...
         body ...+)
-     #:with ret
      #'(with-labels (~? cap) (#:entry a l ...)
-         (let ([c (make-context)])
+         (let ([c (make-context)]
+               [e asm])
            (parameterize ([current-context c])
              (let ()
                (:! a)
                body ...)
-             (emit-code!)))
-         (cast (find-entry a)))
-     (if (syntax-e #'asm)
-         #'(parameterize ([current-assembler asm])
-             ret)
-         #'ret)]))
+             (emit-code! e c))
+           (cast (find-entry a e))))]))
 
 (define-syntax define-λ!
   (syntax-parser

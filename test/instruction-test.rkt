@@ -168,7 +168,9 @@
   (check-equal?
    ((->intptr
      (with-labels #:captured (#:entry a)
-       (parameterize ([current-context (make-context)])
+       (define c1 (make-context))
+       (define c2 (make-context))
+       (parameterize ([current-context c1])
          (:! (label a))
          (xor rax rax)
          (mov rcx (imm32 32))
@@ -179,14 +181,14 @@
          (jmp (rel32 (label c)))
          (:! (label r))
          (ret))
-       (parameterize ([current-context (make-context)])
+       (parameterize ([current-context c2])
          (:! (label c))
          (cmp rcx (imm32 0))
          (je (rel32 (label r)))
          (inc rax)
          (dec rcx)
          (jmp (rel32 (label b))))
-       (emit-code!)
+       (emit-code! (current-assembler) c1 (list c2))
        (find-entry a))))
    32)
 
@@ -307,7 +309,7 @@
       (check-equal? (mycrc32c #"abcdefg")
                     #xE627F441)))
 
-  (reset-assembler!)
+  (assembler-shutdown-all!)
   )
 
 (module+ test
@@ -383,7 +385,7 @@
         (b)))
      '(11 11 13 13 16 16)))
   
-  (reset-assembler!))
+  (assembler-shutdown-all!))
 
 
 (module+ test
@@ -504,3 +506,11 @@
     (check-equal?
      (list (f2 0) (f2 1) (f2 2))
      '(100 200 300))))
+
+(module+ test
+  (check-exn exn:fail?
+             (λ ()
+               (define a (make-context))
+               (ret #:ctx a)
+               (emit-code! (current-assembler) a)
+               (emit-code! (current-assembler) a))))

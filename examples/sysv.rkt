@@ -239,8 +239,8 @@
   #:ctype (_fun -> _int))
 
 (define (make-adder/get [init : Integer])
-  (parameterize* ([current-assembler (make-assembler)]
-                  [current-context (make-context)])
+  (parameterize ([current-assembler (make-assembler)]
+                 [current-context (make-context)])
     (with-labels #:captured ()
       (:! (entry inc))
       (mov rax (imm64 (label d)))

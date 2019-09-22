@@ -5,12 +5,11 @@
          (for-syntax racket/base racket/syntax))
 
 (struct Assembler ([global-labels : (HashTable Label Nonnegative-Fixnum)]
-                   [contexts : (Listof Context)]
                    [pages : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))])
   #:mutable)
 
 (define (make-assembler)
-  (Assembler (make-hasheq) '() '()))
+  (Assembler (make-hasheq) '()))
 
 (define current-assembler (make-parameter (make-assembler)))
 
@@ -26,17 +25,14 @@
                  [inst-relocs : (Listof Reloc-Cell)]
                  [buf : Bytes]
                  [offset : Nonnegative-Fixnum]
-                 [asm : Assembler]
                  [custom-relocs : (Listof Reloc-Custom)]
                  [local-labels : (HashTable Label Nonnegative-Fixnum)]
-                 [label-required : (HashTable Reloc-Cell Nonnegative-Fixnum)])
+                 [label-required : (HashTable Reloc-Cell Nonnegative-Fixnum)]
+                 [addr : Nonnegative-Fixnum])
   #:mutable)
 
-(define (make-context [asm : Assembler (current-assembler)])
-  (define ctx
-    (Context (make-bytes 15) 0 '() (make-bytes 256) 0 asm '() (make-hasheq) (make-hasheq)))
-  (set-Assembler-contexts! asm (cons ctx (Assembler-contexts asm)))
-  ctx)
+(define (make-context)
+  (Context (make-bytes 15) 0 '() (make-bytes 256) 0 '() (make-hasheq) (make-hasheq) 0))
 
 (define (enlarge-buf [ctx : Context]
                      [size : Nonnegative-Fixnum])
