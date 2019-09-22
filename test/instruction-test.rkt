@@ -533,4 +533,25 @@
                (define l (label))
                (jmp (rel8 l))
                (emit-code! (current-assembler) a)))
+
+  (check-exn
+   exn:fail?
+   (λ ()
+     (define c (make-context))
+     (define a (label))
+     (:! a #:ctx c)
+     ;(emit-code! (current-assembler) c)
+     (define c2 (make-context))
+     (jmp (rel32 a) #:ctx c2)
+     (emit-code! (current-assembler) c2)))
+
+  (check-not-exn
+   (λ ()
+     (define c (make-context))
+     (define a (label))
+     (:! a #:ctx c)
+     (emit-code! (current-assembler) c)
+     (define c2 (make-context))
+     (jmp (rel32 a) #:ctx c2)
+     (emit-code! (current-assembler) c2)))
   )
