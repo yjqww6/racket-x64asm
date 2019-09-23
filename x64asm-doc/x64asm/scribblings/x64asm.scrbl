@@ -28,31 +28,32 @@ A minimal example for @racket[x64asm] in Typed Racket would be:
           (get-1000)]
 @bold{Note.} For untyped racket, use @racket[(require x64asm/untyped)] instead.
 
-Now there is a more complicated example(Using sysv call convention) for calculating fibonacci numbers:
+Now there is a more complicated example for calculating fibonacci numbers:
 @examples[#:eval ev
           (define-cast int->int
             #:type (Integer -> Integer)
             #:ctype (_fun _int64 -> _int64))
           
           (define-λ! fib int->int #:labels (start l1 l2 l3)
+            (define arg0 (if (eq? (system-type)'windows) rcx rdi))
             (:! start)
             (push rbp)
             (mov rbp rsp)
             (sub rsp (imm8 16))
             
-            (cmp rdi (imm8 2))
+            (cmp arg0 (imm8 2))
             (jg (rel8 l1))
             (mov rax (imm32 1))
             (leave)
             (ret)
             
             (:! l1)
-            (sub rdi (imm8 1))
-            (mov (mref 64 rbp - 8) rdi)
+            (sub arg0 (imm8 1))
+            (mov (mref 64 rbp - 8) arg0)
             (call (rel32 start))
             (mov (mref 64 rbp - 16) rax)
-            (mov rdi (mref 64 rbp - 8))
-            (sub rdi (imm8 1))
+            (mov arg0 (mref 64 rbp - 8))
+            (sub arg0 (imm8 1))
             (call (rel32 start))
             (add rax (mref 64 rbp - 16))
             (leave)
@@ -159,8 +160,9 @@ An example without helper macros is
  Write custom datum into the code stream of @racket[ctx].
  @examples[#:eval ev
            (define-λ! f int->int #:captured
-             (mov rcx (imm64 (label data)))
-             (jmp (mref 64 rcx + rdi * 8))
+             (define arg0 (if (eq? (system-type)'windows) rcx rdi))
+             (mov rax (imm64 (label data)))
+             (jmp (mref 64 rax + arg0 * 8))
              (:! (label here))
              (mov eax (imm32 100))
              (ret)
