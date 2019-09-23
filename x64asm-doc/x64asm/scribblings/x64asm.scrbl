@@ -136,7 +136,14 @@ An example without helper macros is
 @defproc[(Label? [v any/c]) boolean?]{
  Tests whether @racket[v] is a label.
 }
-@defform[(label)]{Creates a label}
+@defform[(label may-id)
+         #:grammar
+         ((maybe-id (code:line)
+                    (code:line id)))]{Creates a label.
+
+ When @racket[id] is given, see also @racket[with-labels].
+}
+
 
 @defproc[(label-addr [l Label?]) exact-nonnegative-integer?]{
  Get the address of label. This should be called after @racket[emit-code!] is called.
@@ -150,6 +157,26 @@ An example without helper macros is
 @defproc[(data! [#:ctx ctx Context? (current-context)] [datum (or/c bytes? Imm?)])
          void?]{
  Write custom datum into the code stream of @racket[ctx].
+ @examples[#:eval ev
+           (define-λ! f int->int #:captured
+             (mov rcx (imm64 (label data)))
+             (jmp (mref 64 rcx + rdi * 8))
+             (:! (label here))
+             (mov eax (imm32 100))
+             (ret)
+             (:! (label l1))
+             (mov eax (imm32 200))
+             (ret)
+             (:! (label l2))
+             (mov eax (imm32 300))
+             (ret)
+
+             (:! (label data))
+             (data!
+              (imm64 (label here))
+              (imm64 (label l1))
+              (imm64 (label l2))))
+           (map f '(0 1 2))]
 }
 
 @subsection{Instrcution Operands}
