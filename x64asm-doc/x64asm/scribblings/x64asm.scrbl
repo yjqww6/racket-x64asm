@@ -181,6 +181,12 @@ An example without helper macros is
 
 @subsection{Instrcution Operands}
 
+@defidform[Size]{Equivalent to @racket[(U 8 16 32 64 80 128 256)].
+
+@racket[80] and @racket[256] are currently not used.}
+
+@defidform[Scale]{Equivalent to @racket[(U 1 2 4 8)]}
+
 @defidform[Reg]{Type of registers}
 @defproc[(Reg? [v any/c]) boolean?]{
  Tests whether @racket[v] is a register. See also @secref{reg}
