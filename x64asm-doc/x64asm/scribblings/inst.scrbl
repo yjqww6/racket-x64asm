@@ -3,15 +3,15 @@
 
 @section{Instruction prefix}
 @(require (for-label x64asm/private/prefix))
-@defform[(rep form ...)]{
- Call @racket[(form ...)] with used prefix.
+@defform[(rep name args ...)]{
+ Call @racket[(name args ...)] with used prefix.
 }
 
-@defform[(repe form ...)]
-@defform[(repz form ...)]
-@defform[(repne form ...)]
-@defform[(repnz form ...)]
-@defform[(lock form ...)]
+@defform[(repe name args ...)]
+@defform[(repz name args ...)]
+@defform[(repne name args ...)]
+@defform[(repnz name args ...)]
+@defform[(lock name args ...)]
 
 @section{Instruction list}
 @(require (for-label (for-syntax x64asm)) (for-syntax racket/base))

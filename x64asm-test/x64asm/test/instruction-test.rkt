@@ -555,4 +555,28 @@
      (define c2 (make-context))
      (jmp (rel32 a) #:ctx c2)
      (emit-code! (current-assembler) c2)))
+
+  (parameterize ([current-context (make-context)])
+    (check-exn
+     exn:fail?
+     (λ ()
+       (lock add rax rax)))
+    (check-not-exn
+     (λ ()
+       (lock add (mref 64 rax) rax)))
+    (check-exn
+     exn:fail?
+     (λ ()
+       (lock dec rax)))
+    (check-not-exn
+     (λ ()
+       (lock dec (mref 64 rax))))
+    (check-exn
+     exn:fail?
+     (λ ()
+       (lock xchg rax rax)))
+    (check-not-exn
+     (λ ()
+       (lock xchg rax (mref 64 rax))))
+    )
   )
