@@ -60,6 +60,22 @@ Now there is a more complicated example(Using sysv call convention) for calculat
             )
           (fib 40)]
 
+An example without helper macros is
+@examples[#:eval ev
+          (define-cast dd->d
+            #:type (Flonum Flonum -> Flonum)
+            #:ctype (_fun _double _double -> _double))
+          (define my-fl+
+            (parameterize ([current-context (make-context)])
+              (define entry (label))
+              (:! entry)
+              (addsd xmm0 xmm1)
+              (ret)
+            
+              (emit-code!)
+              (dd->d (label-addr entry))))
+          (my-fl+ 100.0 200.0)]
+
 @section{APIs}
 
 @subsection{Core APIs}
@@ -93,7 +109,7 @@ Now there is a more complicated example(Using sysv call convention) for calculat
 
 @defproc[(assembler-shutdown-all! [asm Assembler? (current-assembler)])
          void?]{
- Release memories held by @racket[asm]. Codes generated via @racket[asm] ared invalidated.
+ Release memories held by @racket[asm]. Codes generated via @racket[asm] are invalidated.
 }
 
 @defidform[Context]{
