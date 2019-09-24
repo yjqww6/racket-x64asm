@@ -2,7 +2,7 @@
 @(require (for-label x64asm (except-in racket/contract -> case-> ->*)
                      ffi/unsafe
                      (except-in typed/racket/base not -> cast or and))
-           scribble/examples)
+          scribble/examples racket/file racket/runtime-path)
 
 @title{x64 Assembler}
 @author{yjqww6}
@@ -13,69 +13,28 @@
 @(table-of-contents)
 
 @section{Getting Started}
-
-@(define ev (make-base-eval #:lang 'typed/racket/base))
-
+@(define-syntax-rule (my-example path datum)
+   (let ()
+     (define ev (make-base-eval #:lang 'racket/base
+                                '(require racket/enter)))
+     (ev `(enter! (file ,(path->string path))))
+     (examples #:eval ev datum)))
 A minimal example for @racket[x64asm] in Typed Racket would be:
-@examples[#:eval ev
-          (require x64asm)
-          (define-cast ->int
-            #:type (-> Integer)
-            #:ctype (_fun -> _int))
-          (define-λ! get-1000 ->int
-            (mov rax (imm32 1000))
-            (ret))
-          (get-1000)]
+
+@(define-runtime-path start1 "../examples/start1.rkt")
+@(codeblock (file->string start1))
+@my-example[start1 (get-1000)]
 @bold{Note.} For untyped racket, use @racket[(require x64asm/untyped)] instead.
 
 Now there is a more complicated example for calculating fibonacci numbers:
-@examples[#:eval ev
-          (define-cast int->int
-            #:type (Integer -> Integer)
-            #:ctype (_fun _int64 -> _int64))
-          
-          (define-λ! fib int->int #:labels (start l1 l2 l3)
-            (define arg0 (if (eq? (system-type)'windows) rcx rdi))
-            (:! start)
-            (push rbp)
-            (mov rbp rsp)
-            (sub rsp (imm8 16))
-            
-            (cmp arg0 (imm8 2))
-            (jg (rel8 l1))
-            (mov rax (imm32 1))
-            (leave)
-            (ret)
-            
-            (:! l1)
-            (sub arg0 (imm8 1))
-            (mov (mref 64 rbp - 8) arg0)
-            (call (rel32 start))
-            (mov (mref 64 rbp - 16) rax)
-            (mov arg0 (mref 64 rbp - 8))
-            (sub arg0 (imm8 1))
-            (call (rel32 start))
-            (add rax (mref 64 rbp - 16))
-            (leave)
-            (ret)
-            )
-          (fib 40)]
+@(define-runtime-path start2 "../examples/start2.rkt")
+@(codeblock (file->string start2))
+@my-example[start2 (fib 40)]
 
 An example without helper macros is
-@examples[#:eval ev
-          (define-cast dd->d
-            #:type (Flonum Flonum -> Flonum)
-            #:ctype (_fun _double _double -> _double))
-          (define my-fl+
-            (parameterize ([current-context (make-context)])
-              (define entry (label))
-              (:! entry)
-              (addsd xmm0 xmm1)
-              (ret)
-            
-              (emit-code!)
-              (dd->d (label-addr entry))))
-          (my-fl+ 100.0 200.0)]
+@(define-runtime-path start3 "../examples/start3.rkt")
+@(codeblock (file->string start3))
+@my-example[start3 (my-fl+ 100.0 200.0)]
 
 @section{APIs}
 
@@ -154,38 +113,19 @@ An example without helper macros is
          void?]{
  Locates a label in the current code stream of @racket[ctx].
 }
-
+@define-runtime-path[data.rkt "../examples/data.rkt"]
 @defproc[(data! [#:ctx ctx Context? (current-context)] [datum (or/c bytes? Imm?)])
          void?]{
  Write custom datum into the code stream of @racket[ctx].
- @examples[#:eval ev
-           (define-λ! f int->int #:captured
-             (define arg0 (if (eq? (system-type)'windows) rcx rdi))
-             (mov rax (imm64 (label data)))
-             (jmp (mref 64 rax + arg0 * 8))
-             (:! (label here))
-             (mov eax (imm32 100))
-             (ret)
-             (:! (label l1))
-             (mov eax (imm32 200))
-             (ret)
-             (:! (label l2))
-             (mov eax (imm32 300))
-             (ret)
-
-             (:! (label data))
-             (data!
-              (imm64 (label here))
-              (imm64 (label l1))
-              (imm64 (label l2))))
-           (map f '(0 1 2))]
+ @(codeblock (file->string data.rkt))
+ @my-example[data.rkt (map f '(0 1 2))]
 }
 
 @subsection{Instrcution Operands}
 
 @defidform[Size]{Equivalent to @racket[(U 8 16 32 64 80 128 256)].
 
-@racket[80] and @racket[256] are currently not used.}
+ @racket[80] and @racket[256] are currently not used.}
 
 @defidform[Scale]{Equivalent to @racket[(U 1 2 4 8)]}
 
@@ -276,15 +216,15 @@ An example without helper macros is
 
  @bold{Note: } @racket[require]s from enclosing module would not work inside @racket[ctype-expr] in @racket[typed/racket].
  Use @racket[local-require] instead.
- @examples[#:eval ev
-           (define-cast flfls
-             #:type (FlVector FlVector -> Void)
-             #:ctype (let ()
-                       (local-require racket/flonum)
-                       (_fun (a b) ::
-                             (_pointer = (flvector->cpointer a))
-                             (_pointer = (flvector->cpointer b))
-                             [_size = (flvector-length b)] -> _void)))]
+ @racketblock[
+ (define-cast flfls
+   #:type (FlVector FlVector -> Void)
+   #:ctype (let ()
+             (local-require racket/flonum)
+             (_fun (a b) ::
+                   (_pointer = (flvector->cpointer a))
+                   (_pointer = (flvector->cpointer b))
+                   [_size = (flvector-length b)] -> _void)))]
 }
 
 @defform[(with-labels maybe-captured (l ...) body ...)
