@@ -1,6 +1,31 @@
 #lang racket
 (require ffi/unsafe x64asm/untyped)
 
+(define err-offset
+  (let ([asm (make-assembler)]
+        [ctx (make-context)]
+        [l (label)]
+        [i (label)])
+    (:! l #:ctx ctx)
+    (nop #:ctx ctx (mref 32 + (imm32 0 #:! i)))
+    (emit-code! asm ctx)
+    (assembler-shutdown-all! asm)
+    (- (label-addr i) (label-addr l))))
+
+(define (call/on-error target err)
+  (call (rel32 target))
+  (define here (label))
+  (:! here)
+  (nop (mref 32 + (latent-imm 32 (λ ()
+                                   (- (label-addr err)
+                                      (label-addr here)))))))
+
+(define (ret-error)
+  (pop r8)
+  (mov r9d (mref 32 r8 + (imm8 err-offset)))
+  (add r8 r9)
+  (jmp r8))
+
 ;;; defines some helper functions to handle platform specific thing as much as possible
 (define ptr-false
   (case (system-type 'gc)
@@ -63,33 +88,6 @@
     [(3m) (values 8 16)]
     [(cs) (values 7 15)]))
 
-;;; A lightweight but flexible error handling approach using nop+disp32.
-
-
-(define err-offset
-  (let ([asm (make-assembler)]
-        [ctx (make-context)]
-        [l (label)]
-        [i (label)])
-    (:! l #:ctx ctx)
-    (nop #:ctx ctx (mref 32 + (imm32 0 #:! i)))
-    (emit-code! asm ctx)
-    (assembler-shutdown-all! asm)
-    (- (label-addr i) (label-addr l))))
-
-(define (call/on-error target err)
-  (call (rel32 target))
-  (define here (label))
-  (:! here)
-  (nop (mref 32 + (latent-imm 32 (λ ()
-                                   (- (label-addr err)
-                                      (label-addr here)))))))
-
-(define (ret-error)
-  (pop r8)
-  (mov r9d (mref 32 r8 + (imm8 err-offset)))
-  (add r8 r9)
-  (jmp r8))
 
 ;;; Since interior nodes don't do anything but pop on error in this example,
 ;;; an alternative approach may be recording the stack pointer at the beginning,

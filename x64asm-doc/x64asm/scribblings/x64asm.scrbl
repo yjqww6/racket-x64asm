@@ -2,7 +2,7 @@
 @(require (for-label x64asm (except-in racket/contract -> case-> ->*)
                      ffi/unsafe
                      (except-in typed/racket/base not -> cast or and))
-          scribble/examples racket/file racket/runtime-path)
+          racket/runtime-path "sample.rkt")
 
 @title{x64 Assembler}
 @author{yjqww6}
@@ -13,28 +13,16 @@
 @(table-of-contents)
 
 @section{Getting Started}
-@(define-syntax-rule (my-example path datum)
-   (let ()
-     (define ev (make-base-eval #:lang 'racket/base
-                                '(require racket/enter)))
-     (ev `(enter! (file ,(path->string path))))
-     (examples #:eval ev datum)))
 A minimal example for @racket[x64asm] in Typed Racket would be:
 
-@(define-runtime-path start1 "../examples/start1.rkt")
-@(codeblock (file->string start1))
-@my-example[start1 (get-1000)]
+@sample["../examples/start1.rkt" k (get-1000)]
 @bold{Note.} For untyped racket, use @racket[(require x64asm/untyped)] instead.
 
 Now there is a more complicated example for calculating fibonacci numbers:
-@(define-runtime-path start2 "../examples/start2.rkt")
-@(codeblock (file->string start2))
-@my-example[start2 (fib 40)]
+@sample["../examples/start2.rkt" k (fib 40)]
 
 An example without helper macros is
-@(define-runtime-path start3 "../examples/start3.rkt")
-@(codeblock (file->string start3))
-@my-example[start3 (my-fl+ 100.0 200.0)]
+@sample["../examples/start3.rkt" k (my-fl+ 100.0 200.0)]
 
 @section{APIs}
 
@@ -113,12 +101,10 @@ An example without helper macros is
          void?]{
  Locates a label in the current code stream of @racket[ctx].
 }
-@define-runtime-path[data.rkt "../examples/data.rkt"]
+
 @defproc[(data! [#:ctx ctx Context? (current-context)] [datum (or/c bytes? Imm?)])
          void?]{
  Write custom datum into the code stream of @racket[ctx].
- @(codeblock (file->string data.rkt))
- @my-example[data.rkt (map f '(0 1 2))]
 }
 
 @subsection{Instrcution Operands}
