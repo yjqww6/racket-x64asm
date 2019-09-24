@@ -2,7 +2,7 @@
 @(require (for-label x64asm (except-in racket/contract -> case-> ->*)
                      ffi/unsafe
                      (except-in typed/racket/base not -> cast or and))
-          racket/sandbox scribble/examples)
+           scribble/examples)
 
 @title{x64 Assembler}
 @author{yjqww6}
@@ -323,3 +323,4 @@ An example without helper macros is
 
 @include-section["registers.scrbl"]
 @include-section["inst.scrbl"]
+@include-section["advanced.scrbl"]
