@@ -152,7 +152,7 @@ Define our function
             (ret-error)
   
             (:! (label invalid))
-            (mov rax (imm32 ptr-false))
+            (mov rax (imm64 ptr-false))
             (ret-error))
           ]
 
