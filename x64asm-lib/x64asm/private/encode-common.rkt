@@ -36,10 +36,19 @@
       [8 b11]))
   
   (match operand
-    [(?Reg #:code code)
+    [(?GPR #:code code)
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib b11 reg-bits code)
              #f #f)]
+    [(?XMM #:code code)
+     (values (rex.rxb reg-bits 0 code)
+             (modrm/sib b11 reg-bits code)
+             #f #f)]
+    [(Mref _ (? IP?) #f (and disp (Imm 32 _)) _)
+     (values (rex.rxb reg-bits 0 0)
+             (modrm/sib b00 reg-bits #b101)
+             #f
+             disp)]
     [(Mref _ #f #f (and disp (Imm 32 _)) _)
      (values (rex.rxb reg-bits 0 0)
              (modrm/sib b00 reg-bits #b100)
@@ -47,12 +56,12 @@
              disp)]
     [(Mref size (and (RBP) r) #f #f _)
      (mod/rm reg-bits (Mref size r #f (Immediate 8 #f 0) #f))]
-    [(Mref _ (?Reg #:code code) #f disp _)
+    [(Mref _ (?GPR #:code code) #f disp _)
      ;#:when (not (= code #b101))
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib (disp->mod disp) reg-bits code)
              #f disp)]
-    [(Mref _ #f (cons (and (?Reg #:code index) (not (RSP))) s) disp _)
+    [(Mref _ #f (cons (and (?GPR #:code index) (not (RSP))) s) disp _)
      (values (rex.rxb reg-bits index #b101)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
@@ -63,7 +72,7 @@
                 (Immediate 32 #f num)]
                [else
                 (error 'encode-common "cannot encode: requires disp32: ~a" disp)]))]
-    [(Mref _ (?Reg #:code base) (cons (and (?Reg #:code index) (not (RSP))) s) disp _)
+    [(Mref _ (?GPR #:code base) (cons (and (?GPR #:code index) (not (RSP))) s) disp _)
      (values (rex.rxb reg-bits index base)
              (modrm/sib (disp->mod disp) reg-bits #b100)
              (modrm/sib (->scale s) index base)
@@ -102,9 +111,10 @@
 
 (define (find-addressing-size [E : (U Reg Mref)]) : Size
   (match E
-    [(Mref _ (?Reg #:size size) #f _ _) size]
-    [(Mref _ #f (cons (?Reg #:size size) _) _ _) size]
-    [(Mref _ (?Reg #:size size) (cons (?Reg #:size size) _) _ _) size]
+    [(Mref _ (?IP #:size size) _ _ _) size]
+    [(Mref _ (?GPR #:size size) #f _ _) size]
+    [(Mref _ #f (cons (?GPR #:size size) _) _ _) size]
+    [(Mref _ (?GPR #:size size) (cons (?GPR #:size size) _) _ _) size]
     [_ (ann 64 Size)]))
 
 (define (encode-common [ctx : Context]

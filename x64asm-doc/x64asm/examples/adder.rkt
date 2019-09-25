@@ -16,8 +16,7 @@
     (with-labels #:captured ()
       
       (:! (label inc))
-      (mov rax (imm64 (label d)))
-      (add (mref 32 rax) arg0)
+      (add (mref 32 rip + (rel32 (label d))) arg0)
       (mov eax (imm32 init #:! (label d)))
       (ret)
       

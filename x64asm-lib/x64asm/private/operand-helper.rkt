@@ -17,10 +17,15 @@
         (~optional (~seq seg :)
                    #:defaults ([seg #'#f]))
         (~or
+         (~and (~or (~literal rip)
+                    (~literal eip))
+               ip
+               (~bind [base #'#f] [is #'#f]))
          (~and (~seq base + index * scale)
                (~bind [is #'(cons index (ann scale Scale))]))
          (~and (~seq index * scale)
-               (~bind [base #'#f] [is #'(cons index (ann scale Scale))]))
+               (~bind [base #'#f]
+                      [is #'(cons index (ann scale Scale))]))
          (~and base
                (~bind [is #'#f]))
          (~and (~seq)
@@ -36,6 +41,8 @@
            (define disp? (syntax-e #'disp))]
      #:when (or base? is? disp?)
      (cond
+       [(attribute ip)
+        #'(Mref size ip #f (or-imm32 disp) seg)]
        [(and (not is?) (not base?))
         #'(Mref size #f #f (or-imm32 disp) seg)]
        [disp?

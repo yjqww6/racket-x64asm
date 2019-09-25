@@ -14,10 +14,12 @@
 (struct GPR Reg ())
 (struct XMM Reg ())
 (struct Seg Reg ([prefix : Byte]))
+(struct IP Reg ())
 
 (define-struct-match ?Reg Reg name code size)
 (define-struct-match ?GPR GPR name code size)
 (define-struct-match ?XMM XMM name code size)
+(define-struct-match ?IP IP name code size)
 
 (begin-for-syntax 
   (define-syntax-class reg
@@ -40,6 +42,9 @@
                           (T 'id code size other ...))]
                [(_ s) #'(and (id.up)
                              (?Reg #:size s))]))))]))
+
+(define-reg IP rip 0 64)
+(define-reg IP eip 0 32)
 
 (define-syntax (define-gpr stx)
   (syntax-parse stx

@@ -10,13 +10,13 @@
         (define-values (add! get) (make-adder/get 100))
         (add! 10)
         (get)
-        (add! 20)
+        (add! 25)
         (get)]
 
 @section{Computed goto}
 @sample["../examples/data.rkt" k
         (map f '(0 1 2))
-        (map g '(0 1 2))]
+        (map g '(2 1 0))]
 
 @section{Error handling via NOP}
 Here is an advanced example for error handling via nop in caller side.

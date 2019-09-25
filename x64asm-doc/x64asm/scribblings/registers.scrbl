@@ -1,10 +1,10 @@
 #lang scribble/manual
 @title[#:tag "reg"]{Registers}
 
-@(define-syntax-rule (define-registers id ...)
-   (begin (defthing id Reg?) ...))
+@(define-syntax-rule (define-registers ? id ...)
+   (begin (defthing id ?) ...))
 
-@(define-registers
+@(define-registers GRP?
    al ah ax eax rax
    cl ch cx ecx rcx
    dl dh dx edx rdx
@@ -21,9 +21,17 @@
    r13b r13w r13d r13
    r14b r14w r14d r14
    r15b r15w r15d r15
+   )
+
+@(define-registers XMM?
    xmm0 xmm1 xmm2 xmm3
    xmm4 xmm5 xmm6 xmm7
    xmm8 xmm9 xmm10 xmm11
-   xmm12 xmm13 xmm14 xmm15
+   xmm12 xmm13 xmm14 xmm15)
+
+@(define-registers Seg?
    fs gs)
+
+@(define-registers IP?
+   eip rip)
 

@@ -24,8 +24,8 @@
 (struct Offset ([size : Size] [num : Imm] [seg : (Option Seg)]) #:transparent)
 
 (struct Mref ([size : Size]
-              [base : (Option Reg)]
-              [index+scale : (Option (Pairof Reg Scale))]
+              [base : (U False GPR IP)]
+              [index+scale : (Option (Pairof GPR Scale))]
               [disp : (Option Imm)]
               [seg : (Option Seg)]) #:transparent)
 

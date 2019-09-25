@@ -143,6 +143,14 @@
     (jmp (rel8 b)))
    #"\x48\x39\xd8\x7f\x02\x90\x90\xeb\xf7")
 
+  (check-equal?
+   (dump!
+    (mov eax (mref 32 rip + 8))
+    (mov eax (mref 32 eip + 8)))
+   (bytes-append
+    #"\x8B\x05\x08\x00\x00\x00"
+    #"\x67\x8B\x05\x08\x00\x00\x00"))
+
   (define-cast ->intptr
     #:type (-> Integer)
     #:ctype (_fun -> _intptr))

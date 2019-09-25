@@ -135,6 +135,11 @@ An example without helper macros is
  Tests whether @racket[v] is a segment register. See also @secref{reg}
 }
 
+@defidform[IP]{Type of instruction pointer registers}
+@defproc[(IP? [v any/c]) boolean?]{
+ Tests whether @racket[v] is a instruction pointer register. See also @secref{reg}
+}
+
 @defidform[Mref]{Type of memory references}
 @defproc[(Mref? [v any/c]) boolean?]{
  Tests whether @racket[v] is a memory reference.

@@ -29,10 +29,10 @@
 ;;; This one use a smaller table
 
 (define-λ! g int->int #:captured
-  (mov rdx (imm64 (label data)))
+  (lea rdx (mref 64 rip + (rel32 (label data))))
   (xor r8 r8)
   (mov r8b (mref 8 rdx + arg0 * 1))
-  (mov rax (imm64 (label here)))
+  (lea rax (mref 64 rip + (rel32 (label here))))
   (add rax r8)
   (jmp rax)
   (:! (label here))
