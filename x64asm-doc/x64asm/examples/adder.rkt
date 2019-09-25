@@ -9,7 +9,7 @@
   #:type (-> Fixnum)
   #:ctype (_fun -> _int))
 
-(define arg0 (if (eq? (system-type) 'windows) edi ecx))
+(define arg0 (if (eq? (system-type) 'windows) ecx edi))
 
 (define (make-adder/get [init : Integer])
   (parameterize ([current-context (make-context)])
