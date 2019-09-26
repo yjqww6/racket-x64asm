@@ -1,8 +1,9 @@
 #lang typed/racket/base
 (require "encode.rkt" "assembler.rkt" "registers.rkt" "operand.rkt"
+         "cases2.rkt"
          racket/match
          (for-syntax racket/base syntax/parse syntax/name
-                     racket/syntax))
+                     racket/syntax syntax/id-table))
 (provide (all-defined-out))
 
 (begin-for-syntax
@@ -18,6 +19,7 @@
          (and (f #'(a . c)) (f #'(b . d)))]
         [(a . b)
          (eq? (syntax-e #'a) (syntax-e #'b))])))
+  
   (define (make-dispatcher preds)
     (define slot (assf (λ (x) (same-dispatcher? x preds)) dispatchers))
     (cond
@@ -36,11 +38,23 @@
                       name)))
                (set! dispatchers (cons (cons preds id) dispatchers))
                id])]))
+
+  (define (reduce-type ls)
+    (let loop ([ls ls])
+      (cond
+        [(null? ls) '()]
+        [else
+         (cons (car ls)
+               (loop (filter (λ (b) (not (same-dispatcher? (car ls) b)))
+                             (cdr ls))))])))
+  
   (define-syntax-class (pred prefix)
     (pattern '()
-             #:attr unsafe (format-id prefix "~a:" prefix))
+             #:attr unsafe (format-id prefix "~a:" prefix)
+             #:attr T #'())
     (pattern (f:id)
-             #:attr unsafe (format-id prefix "~a:~a" prefix (syntax-e #'f))))
+             #:attr unsafe (format-id prefix "~a:~a" prefix (syntax-e #'f))
+             #:attr T (lookup-compound (syntax-local-introduce #'f))))
   (define-syntax-class names
     (pattern (n:id ns:id ...)
              #:attr name #'n
@@ -59,6 +73,9 @@
      #:declare p (pred #'name.name)
      #:with id (make-dispatcher (syntax-local-introduce #'(p ...)))
      #:with (e ...) (generate-temporaries #'(encoder ...))
+     #:with (T ...) (reduce-type (syntax->list #'(p.T ...)))
+     #:with ((C ...) ...) #'(T ...)
+     #:with tmp (generate-temporary 'tmp)
      #'(begin
          (define-values (name.ls name.name p.unsafe ...)
            (let ([e encoder] ...)
@@ -74,4 +91,11 @@
          (module+ ls
            (provide (rename-out [name.ls name.name])))
          (module+ unsafe
-           (provide p.unsafe ...)))]))
+           (provide p.unsafe ...))
+         (module+ well-typed
+           (: tmp
+              (case->
+               (-> C ... Void)
+               ...))
+           (define tmp name.name)
+           (provide (rename-out [tmp name.name]))))]))

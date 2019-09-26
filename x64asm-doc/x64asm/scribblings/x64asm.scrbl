@@ -115,6 +115,8 @@ An example without helper macros is
 
 @defidform[Scale]{Equivalent to @racket[(U 1 2 4 8)]}
 
+@defidform[Operand]{Equivalent to @racket[(U Imm Mref Offset Reg)]}
+
 @defidform[Reg]{Type of registers}
 @defproc[(Reg? [v any/c]) boolean?]{
  Tests whether @racket[v] is a register. See also @secref{reg}
@@ -254,4 +256,5 @@ An example without helper macros is
 
 @include-section["registers.scrbl"]
 @include-section["inst.scrbl"]
+@include-section["expe.scrbl"]
 @include-section["advanced.scrbl"]
