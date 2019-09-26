@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
 (module+ test
-  (require x64asm
+  (require x64asm x64asm/unsafe
            (submod x64asm/private/assembler debug))
   
   (require (for-syntax racket/base)
@@ -42,7 +42,8 @@
    #"\x48\x8d\x42\x01")
   (check-equal?
    (dump!
-    (unsafe-lea:Gv-Mv rax (mref 64 rdx + 1)))
+    (unsafe-lea:Gv-Mv (assert (current-context))
+                      (list rax (mref 64 rdx + 1))))
    #"\x48\x8d\x42\x01")
   
   (check-equal?

@@ -4,26 +4,6 @@
          (for-syntax racket/base syntax/parse syntax/name
                      racket/syntax))
 (provide (all-defined-out))
-#;
-(define-syntax define-dispatch
-  (syntax-rules ()
-    [(_ () [pred encoder] ...)
-     (begin)]
-    [(_ (name names ...) [pred encoder] ...)
-     (begin
-       (define-dispatch name [pred encoder] ...)
-       (~@ (define names name)
-           (provide names))
-       ...)]
-    [(_ name [pred encoder] ...)
-     (begin
-       (: name ([#:ctx (Option Context)] Operand * -> Void))
-       (define (name #:ctx [ctx (current-context)]
-                     . ops)
-         (assert ctx)
-         (match ops
-           [pred (encoder ctx ops)] ...))
-       (provide name))]))
 
 (begin-for-syntax
   (define dispatchers '())
@@ -48,9 +28,8 @@
                (define id
                  (syntax-local-lift-expression
                   #'(λ ([args : Encoder] ...)
-                      (: name ([#:ctx (Option Context)] Operand * -> Void))
-                      (define (name #:ctx [ctx (current-context)]
-                                    . ops)
+                      (: name (-> (Listof Operand) [#:ctx (Option Context)] Void))
+                      (define (name #:ctx [ctx (current-context)] ops)
                         (assert ctx)
                         (match ops
                           [pred (args ctx ops)] ...))
@@ -59,15 +38,17 @@
                id])]))
   (define-syntax-class (pred prefix)
     (pattern '()
-             #:attr name (format-id prefix "unsafe-~a:" prefix))
+             #:attr unsafe (format-id prefix "unsafe-~a:" prefix))
     (pattern (f:id)
-             #:attr name (format-id prefix "unsafe-~a:~a" prefix (syntax-e #'f))))
+             #:attr unsafe (format-id prefix "unsafe-~a:~a" prefix (syntax-e #'f))))
   (define-syntax-class names
     (pattern (n:id ns:id ...)
              #:attr name #'n
+             #:attr ls (format-id #'n "ls:~a" #'n)
              #:attr (alias 1) (syntax->list #'(ns ...)))
     (pattern n:id
              #:attr name #'n
+             #:attr ls (format-id #'n "ls:~a" #'n)
              #:attr (alias 1) '()))
   )
 
@@ -79,13 +60,18 @@
      #:with id (make-dispatcher (syntax-local-introduce #'(p ...)))
      #:with (e ...) (generate-temporaries #'(encoder ...))
      #'(begin
-         (define-values (name.name p.name ...)
+         (define-values (name.ls name.name p.unsafe ...)
            (let ([e encoder] ...)
+             (define name.ls (id e ...))
              (values
-              (id e ...)
+              name.ls
               (ann (λ (#:ctx [ctx (current-context)] . rst)
-                     (e (assert ctx) rst))
+                     (name.ls #:ctx ctx rst))
                    (-> [#:ctx (Option Context)] Operand * Void))
-              ...)))
+              e ...)))
          (define name.alias name.name) ...
-         (provide name.name p.name ... name.alias ...))]))
+         (provide name.name name.alias ...)
+         (module+ ls
+           (provide name.ls))
+         (module+ unsafe
+           (provide p.unsafe ...)))]))
