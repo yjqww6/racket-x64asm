@@ -1,10 +1,10 @@
 #lang scribble/manual
 @title[#:tag "reg"]{Registers}
-
+@(require (for-label x64asm))
 @(define-syntax-rule (define-registers ? id ...)
    (begin (defthing id ?) ...))
 
-@(define-registers GRP?
+@(define-registers GPR?
    al ah ax eax rax
    cl ch cx ecx rcx
    dl dh dx edx rdx
