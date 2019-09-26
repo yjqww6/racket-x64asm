@@ -1,7 +1,7 @@
 #lang typed/racket/base
 
 (module+ test
-  (require x64asm x64asm/unsafe
+  (require x64asm (prefix-in unsafe- x64asm/unsafe)
            (submod x64asm/private/assembler debug))
   
   (require (for-syntax racket/base)

@@ -38,9 +38,9 @@
                id])]))
   (define-syntax-class (pred prefix)
     (pattern '()
-             #:attr unsafe (format-id prefix "unsafe-~a:" prefix))
+             #:attr unsafe (format-id prefix "~a:" prefix))
     (pattern (f:id)
-             #:attr unsafe (format-id prefix "unsafe-~a:~a" prefix (syntax-e #'f))))
+             #:attr unsafe (format-id prefix "~a:~a" prefix (syntax-e #'f))))
   (define-syntax-class names
     (pattern (n:id ns:id ...)
              #:attr name #'n
@@ -72,6 +72,6 @@
          (define name.alias name.name) ...
          (provide name.name name.alias ...)
          (module+ ls
-           (provide name.ls))
+           (provide (rename-out [name.ls name.name])))
          (module+ unsafe
            (provide p.unsafe ...)))]))
