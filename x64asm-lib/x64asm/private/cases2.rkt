@@ -61,7 +61,7 @@
 (define-match-expander M
   (syntax-parser
     [(_ size)
-     #'(Mref size _ _ (or #f (Imm 8 _) (Imm 32 _)) _)]))
+     #'(Mref size _ _ (or #f (Imm (or 8 32) _)) _)]))
 (attach! M Mref)
 
 (define-match-expander E
