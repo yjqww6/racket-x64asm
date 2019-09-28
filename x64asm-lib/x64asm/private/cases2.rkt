@@ -300,7 +300,7 @@
   [rAX-Oz (vz ?rAX O) : G O]
   [rAX-Ov (vv ?rAX O) : G O]
   [rAX-Gv (vv ?rAX G) : G G]
-  [eAX-Ib (list (I 8) (?rAX (z))) : G I]
+  [eAX-Ib (list (?rAX (z)) (I 8)) : G I]
   [eAX-DX (list (?rAX (z)) (DX)) : G G]
   [Ib-eAX (list (I 8) (?rAX (z))) : I G]
   [DX-eAX (list (DX) (?rAX (z))) : G G]

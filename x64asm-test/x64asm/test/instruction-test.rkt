@@ -587,5 +587,9 @@
     (check-not-exn
      (λ ()
        (lock xchg rax (mref 64 rax))))
+
+    (check-not-exn
+     (λ ()
+       (in eax (imm8 1))))
     )
   )
