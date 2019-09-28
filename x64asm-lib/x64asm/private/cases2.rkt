@@ -302,6 +302,8 @@
   [rAX-Gv (vv ?rAX G) : G G]
   [eAX-Ib (list (?rAX (z)) (I 8)) : G I]
   [eAX-DX (list (?rAX (z)) (DX)) : G G]
+  [Ob-AL (bb O AL) : O G]
+  [Ov-rAX (vv O ?rAX) : O G]
   [Ib-eAX (list (I 8) (?rAX (z))) : I G]
   [DX-eAX (list (DX) (?rAX (z))) : G G]
   [Gv-rAX (vv G ?rAX) : G G]
