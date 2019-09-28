@@ -230,11 +230,9 @@
 (define-dispatch*
   [pmovmskb (Gd-V) (V-W: #xd7)]
   [pextrw (Gd-V-Ib)
-          (V-W-I: #xc5 #:mandatory-prefix #x66)])
-
-(define-dispatch pinsrw
-  [(V-Gd-Ib) (V-W-I: #xc4 #:mandatory-prefix #x66)]
-  [(V-Mw-Ib) (V-W-I: #xc4 #:mandatory-prefix #x66)])
+          (V-W-I: #xc5 #:mandatory-prefix #x66)]
+  [pinsrw (V-GdMw-Ib)
+          (V-W-I: #xc4 #:mandatory-prefix #x66)])
 
 (define-VW128 #x66
   [packssdw #x6b]

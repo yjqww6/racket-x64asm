@@ -200,6 +200,11 @@
 (define (Gy? [x : GPR])
   (y (Reg-size x)))
 
+(define (GdMw? [x : (U GPR Mref)])
+  (if (GPR? x)
+      (d (Reg-size x))
+      (w (Mref-size x))))
+
 (define-pred+
   [V-V (V V) oo]
   [Eb-CL (E G) bb #:guard yes CL?]
@@ -248,8 +253,7 @@
   [V-Ed (V E) od]
   [Eq-V (E V) qo]
   [Ed-V (E V) do]
-  [V-Gd-Ib (V G I) odb]
-  [V-Mw-Ib (V M I) owb]
+  [V-GdMw-Ib (V E I) yes #:guard yes GdMw? Ib?]
   [Eb-1 (E I) bb #:guard yes one?]
   [Ev-1 (E I) vb #:guard yes one?]
   [Gv-S (G S) vw]
