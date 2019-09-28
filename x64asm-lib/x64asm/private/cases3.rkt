@@ -39,10 +39,6 @@
   (and (Immediate? x)
        (eq? (Immediate-num x) 1)))
 
-(define-atom-pred One one? Imm-size Imm)
-(define-atom-pred eAX eAX? Reg-size GPR)
-(define-atom-pred rAX rAX? Reg-size GPR)
-
 (define-atom-pred G GPR? Reg-size GPR)
 (define-atom-pred M Mref? Mref-size Mref)
 (define-atom-pred I Imm? Imm-size Imm)
