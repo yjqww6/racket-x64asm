@@ -20,7 +20,7 @@ This module provide more precisely typed version of instructions.
           (require x64asm/well-typed)
           (:print-type mov)]
 
-Noted that these function no longer accept a keyword context argument, use @racket[current-context].
+Noted that these function no longer accept a keyword context argument, you must provide it explicitly.
 
 @section{Instructions that accept a list}
 @defmodule[x64asm/apply]
