@@ -10,8 +10,7 @@
 This module provide unsafe version of instructions that skip argument dispatching and some checking.
 @examples[#:eval (make-base-eval #:lang 'typed/racket/base)
           (require x64asm/unsafe)
-          (:print-type mov:Eb-Gb)
-          (:type #:verbose Encoder)]
+          (:print-type mov:Eb-Gb)]
 
 @section{Well-typed version of Instructions}
 @defmodule[x64asm/well-typed]

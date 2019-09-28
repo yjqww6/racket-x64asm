@@ -81,13 +81,13 @@
                           (syntax-e #'pat)
                           (λ () (list (syntax-e #'pat)))))))
     (syntax-parser
-      [(_ (id ...) (s ...)
+      [(_ (id ...) (s ...) err
           [(pat:pat ...) guard expr] ...)
        (build-pred-tree (syntax->datum #'([pat.p  ...] ...))
                         (syntax->list #'(id ...))
                         (syntax->list #'(s ...))
                         (syntax->list #'([guard expr] ...))
-                        #'(error 'fail))])))
+                        #'err)])))
 
 
 #;

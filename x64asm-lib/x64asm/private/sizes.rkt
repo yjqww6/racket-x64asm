@@ -90,7 +90,8 @@
   [b w d q o])
 
 (define-size-pred+
-  [b z])
+  [b z]
+  [w z])
 
 (define-syntax define-size-pred3
   (syntax-parser

@@ -8,39 +8,33 @@
 
 (define-syntax define-reg-pred
   (syntax-parser
-    [(_ [X name reg T T?] ...)
+    [(_ [name reg T] ...)
      #'(begin
          (~@
-          (: name (-> Any Boolean : #:+ T))
+          (: name (-> T Boolean))
           (define (name a)
-            (and (eq? a reg)
-                 (T? a)))
-          (define-atom-pred X name Reg-size T))
+            (eq? a reg)))
          ...)]))
 
 (define-reg-pred
-  [AL AL? al GPR GPR?]
-  [CL CL? cl GPR GPR?]
-  [DX DX? dx GPR GPR?]
-  [FS FS? fs Seg Seg?]
-  [GS GS? gs Seg Seg?])
+  [AL? al GPR]
+  [CL? cl GPR]
+  [DX? dx GPR]
+  [FS? fs Seg]
+  [GS? gs Seg])
 
-(: eAX? (-> Any Boolean : #:+ GPR))
+(: eAX? (-> GPR Boolean))
 (define (eAX? x)
-  (and
-   (or (eq? x ax)
-       (eq? x eax))
-   (GPR? x)))
+  (or (eq? x ax)
+      (eq? x eax)))
 
-(: rAX? (-> Any Boolean : #:+ GPR))
+(: rAX? (-> GPR Boolean))
 (define (rAX? x)
-  (and
-   (or (eq? x ax)
-       (eq? x eax)
-       (eq? x rax))
-   (GPR? x)))
+  (or (eq? x ax)
+      (eq? x eax)
+      (eq? x rax)))
 
-(: one? (-> Any Boolean : #:+ Imm))
+(: one? (-> Imm Boolean))
 (define (one? x)
   (and (Immediate? x)
        (eq? (Immediate-num x) 1)))
@@ -64,10 +58,14 @@
 
 (define-syntax define-pred
   (syntax-parser
-    [(_ name:id n:number (p:id ...) size-pred:id (T ...))
+    [(_ name:id n:number (p:id ...) #f size-pred:id (T ...))
      #'(begin-for-syntax
          (hash-set! pred-table 'name
-                    (vector n '(p ...) #'size-pred (list #'T ...))))]))
+                    (vector n '(p ...) #f #'size-pred (list #'T ...))))]
+    [(_ name:id n:number (p:id ...) (guard ...) size-pred:id (T ...))
+     #'(begin-for-syntax
+         (hash-set! pred-table 'name
+                    (vector n '(p ...) (list #'guard ...) #'size-pred (list #'T ...))))]))
 
 (define-syntax define-pred-1-helper
   (let ()
@@ -80,7 +78,7 @@
                ))
     (syntax-parser
       [(_ id:id1 ...)
-       #'(begin (define-pred id.p 1 (id.first) id.u ((id.T ...)))
+       #'(begin (define-pred id.p 1 (id.first) #f id.u ((id.T ...)))
                 ...)])))
 
 (define-syntax (define-pred-1 stx)
@@ -111,7 +109,7 @@
     [(_ id:AbCd ...)
      #'(begin
          (~@
-          (define-pred id.p 2 (id.A id.C) id.u
+          (define-pred id.p 2 (id.A id.C) #f id.u
             ((id.TA ...) (id.TC ...))))
          ...)]))
 
@@ -149,7 +147,7 @@
     [(_ id:AbCd ...)
      #'(begin
          (~@
-          (define-pred id.p 2 (id.A id.C) id.u
+          (define-pred id.p 2 (id.A id.C) #f id.u
             ((id.TA ...) (id.TC ...))))
          ...)]))
 
@@ -173,66 +171,93 @@
                #:attr (T 1) (get-types (syntax-e #'A))))
     (syntax-parser
       [(_) #'(begin)]
+      [(_ [name (A:id1 ...) u #:guard g ...] r ...)
+       #:with n (datum->syntax #'k
+                               (length (syntax->list #'(A ...))))
+       #'(begin (define-pred name n (A ...) (g ...) u ((A.T ...) ...))
+                (define-pred+ r ...))]
       [(_ [name (A:id1 ...) u] r ...)
        #:with n (datum->syntax #'k
                                (length (syntax->list #'(A ...))))
-       #'(begin (define-pred name n (A ...) u ((A.T ...) ...))
+       #'(begin (define-pred name n (A ...) #f u ((A.T ...) ...))
                 (define-pred+ r ...))])))
+
+(define-syntax-rule (yes _ ...) #t)
+
+(define-syntax (define-W stx)
+  (define-syntax-class xx
+    (pattern x:id
+             #:attr name (format-id #'x "W~a?" #'x)))
+  (syntax-parse stx
+    [(_ a:xx ...)
+     #'(begin
+         (define (a.name [x : (U XMM Mref)])
+           (if (Mref? x)
+               (a (Mref-size x))
+               #t))
+         ...)]))
+
+(define-W o q d w)
+(define (Ib? [x : Imm])
+  (b (Imm-size x)))
+
+(define (Gy? [x : GPR])
+  (y (Reg-size x)))
 
 (define-pred+
   [V-V (V V) oo]
-  [Eb-CL (E CL) bb]
-  [Ev-CL (E CL) vb]
-  [AL-Ib (AL I) bb]
-  [Ib-AL (I AL) bb]
-  [AL-Ob (AL O) bb]
-  [AL-Gb (AL G) bb]
-  [AL-DX (AL DX) bb]
-  [DX-AL (DX AL) bb]
-  [rAX-Iz (rAX I) vz]
-  [rAX-Oz (rAX O) vz]
-  [rAX-Ov (rAX O) vv]
-  [rAX-Gv (rAX G) vv]
-  [eAX-Ib (eAX I) zb]
-  [eAX-DX (eAX DX) zb]
-  [Ob-AL (O AL) bb]
-  [Ov-rAX (O G) vv]
-  [Ib-eAX (I eAX) bz]
-  [DX-eAX (DX eAX) bz]
-  [Gv-rAX (G rAX) vv]
+  [Eb-CL (E G) bb #:guard yes CL?]
+  [Ev-CL (E G) vb #:guard yes CL?]
+  [AL-Ib (G I) bb #:guard AL? yes]
+  [Ib-AL (I G) bb #:guard yes AL?]
+  [AL-Ob (G O) bb #:guard AL? yes]
+  [AL-Gb (G G) bb #:guard AL? yes]
+  [AL-DX (G G) bw #:guard AL? DX?]
+  [DX-AL (G G) wb #:guard DX? AL?]
+  [rAX-Iz (G I) vz #:guard rAX? yes]
+  [rAX-Oz (G O) vz #:guard rAX? yes]
+  [rAX-Ov (G O) vv #:guard rAX? yes]
+  [rAX-Gv (G G) vv #:guard rAX? yes]
+  [eAX-Ib (G I) zb #:guard eAX? yes]
+  [eAX-DX (G G) zw #:guard eAX? DX?]
+  [Ob-AL (O G) bb #:guard yes AL?]
+  [Ov-rAX (O G) vv #:guard yes rAX?]
+  [Ib-eAX (I G) bz #:guard yes eAX?]
+  [DX-eAX (G G) wz #:guard DX? eAX?]
+  [Gv-rAX (G G) vv #:guard yes rAX?]
   [Gv-Ev-Ib (G E I) vvb]
   [Gv-Ev-Iz (G E I) vvz]
   [Ev-Gv-Ib (E G I) vvb]
-  [Ev-Gv-CL (E G CL) vvb]
-  [V-Wo (V W) oo]
-  [V-Wq (V W) oq]
-  [V-Wd (V W) od]
+  [Ev-Gv-CL (E G G) vvb #:guard yes yes CL?]
+  [V-Wo (V W) yes #:guard yes Wo?]
+  [V-Wq (V W) yes #:guard yes Wq?]
+  [V-Wd (V W) yes #:guard yes Wd?]
   [V-Mo (V M) oo]
   [V-Mq (V M) oq]
   [V-Md (V M) od]
-  [V-Wo-Ib (V W I) oob]
-  [V-Wq-Ib (V W I) oqb]
-  [V-Wd-Ib (V W I) odb]
-  [Wo-V (W V) oo]
-  [Wq-V (W V) qo]
-  [Wd-V (W V) do]
+  [V-Wo-Ib (V W I) yes #:guard yes Wo? Ib?]
+  [V-Wq-Ib (V W I) yes #:guard yes Wq? Ib?]
+  [V-Wd-Ib (V W I) yes #:guard yes Wd? Ib?]
+  [Wo-V (W V) yes #:guard Wo? yes]
+  [Wq-V (W V) yes #:guard Wq? yes]
+  [Wd-V (W V) yes #:guard Wd? yes]
   [Mo-V (M V) oo]
   [V-Ib (V I) ob]
   [Gd-V (G V) do]
   [Gd-V-Ib (G V I) dob]
   [Gy-V (G V) yo]
-  [Gy-Wq (G W) yq]
-  [Gy-Wd (G W) yd]
+  [Gy-Wq (G W) yes #:guard Gy? Wq?]
+  [Gy-Wd (G W) yes #:guard Gy? Wd?]
   [V-Eq (V E) oq]
   [V-Ed (V E) od]
   [Eq-V (E V) qo]
   [Ed-V (E V) do]
   [V-Gd-Ib (V G I) odb]
   [V-Mw-Ib (V M I) owb]
-  [Eb-1 (E One) bb]
-  [Ev-1 (E One) vb]
+  [Eb-1 (E I) bb #:guard yes one?]
+  [Ev-1 (E I) vb #:guard yes one?]
   [Gv-S (G S) vw]
   [Mw-S (M S) ww]
   [S-Ew (S E) ww]
-  [FS- (FS) w]
-  [GS- (GS) w])
+  [FS (S) w #:guard FS?]
+  [GS (S) w #:guard GS?])

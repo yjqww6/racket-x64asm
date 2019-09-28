@@ -141,14 +141,14 @@
   [(Ex) (E: #xff #:/ 6 #:default-64? #t)]
   [(Ib) (I: #x6a)]
   [(Iz) (I: #x68)]
-  [(FS-) (just #"\x0f\xa0")]
-  [(GS-) (just #"\x0f\xa8")])
+  [(FS) (just #"\x0f\xa0")]
+  [(GS) (just #"\x0f\xa8")])
 
 (define-dispatch pop
   [(Gx) (G: #x58 #:extend-opcode? #t #:default-64? #t)]
   [(Ex) (E: #x8f #:/ 0 #:default-64? #t)]
-  [(FS-) (just #"\x0f\xa1")]
-  [(GS-) (just #"\x0f\xa9")])
+  [(FS) (just #"\x0f\xa1")]
+  [(GS) (just #"\x0f\xa9")])
 
 (define-Jcc
   jo jno
@@ -165,13 +165,13 @@
   [(Ev-Gv) (E-G: #x89)]
   [(Gb-Eb) (G-E: #x8a)]
   [(Gv-Ev) (G-E: #x8b)]
-  [(Gv-S) (E-S: #x8c)]
-  [(Mw-S) (E-G: #x8c #:override-operand-size (ann 32 Size))]
-  [(S-Ew) (G-E: #x8e #:override-operand-size (ann 32 Size))]
   [(AL-Ob) (G-O: #xa0)]
   [(rAX-Ov) (G-O: #xa1)]
   [(Ob-AL) (O-G: #xa2)]
   [(Ov-rAX) (O-G: #xa3)]
+  [(Gv-S) (E-S: #x8c)]
+  [(Mw-S) (E-G: #x8c #:override-operand-size (ann 32 Size))]
+  [(S-Ew) (G-E: #x8e #:override-operand-size (ann 32 Size))]
   [(Gb-Ib) (G-I: #xb0 #:extend-opcode? #t)]
   [(Gv-Iv) (G-I: #xb8 #:extend-opcode? #t)]
   [(Eb-Ib) (E-I: #xc6)]

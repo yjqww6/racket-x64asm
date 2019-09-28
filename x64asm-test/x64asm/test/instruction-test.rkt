@@ -43,7 +43,7 @@
   (check-equal?
    (dump!
     (unsafe-lea:Gv-Mv (assert (current-context))
-                      (list rax (mref 64 rdx + 1))))
+                      rax (mref 64 rdx + 1)))
    #"\x48\x8d\x42\x01")
   
   (check-equal?

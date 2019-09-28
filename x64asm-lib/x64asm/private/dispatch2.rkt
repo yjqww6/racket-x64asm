@@ -10,11 +10,20 @@
 (provide (all-defined-out))
 
 (begin-for-syntax
+  (define (make-guard guard args)
+    (with-syntax ([(arg ...) args])
+      (for/list ([g (in-list guard)])
+        (cond
+          [(not g) #'#t]
+          [else
+           (with-syntax ([(g ...) g])
+             #`(and (g arg) ...))]))))
+  
   (define ((make-case c) gs)
     (match gs
-      [(list (vector 0 '() #f e '()))
+      [(list (vector 0 '() #f #f e '()))
        #`[(#,c) (#,e #,c)]]
-      [(list (vector n pat size e _) ...)
+      [(list (vector n pat guard size e _) ...)
        (with-syntax ([(arg ...) (generate-temporaries (build-list
                                                        (car n)
                                                        (λ (_) 'arg)))]
@@ -25,11 +34,12 @@
                      [(s ...) size]
                      [(e ...) e]
                      [c c])
-         #'[(c arg ...)
-            (pred-tree
-             (arg ...) (ss ...)
-             [p (s ss ...) (e c arg ...)]
-             ...)])]))
+         (with-syntax ([(g ...) (make-guard guard (syntax->list #'(arg ...)))])
+           #'[(c arg ...)
+              (pred-tree
+               (arg ...) (ss ...) (error 'encode "invalid: ~a" (list arg ...))
+               [p (and g (s ss ...)) (e c arg ...)]
+               ...)]))]))
   
   (define (make-dispatcher pats eids)
     (define-syntax-class T
@@ -41,20 +51,20 @@
       (for/list ([p (in-list pats)]
                  [e (in-list eids)])
         (syntax-parse p #:literals (quote)
-          ['() (vector 0 '() #f e '())]
+          ['() (vector 0 '() #f #f e '())]
           [(p:id)
            (match (hash-ref pred-table (syntax-e #'p))
-             [(vector n pat size T)
-              (vector n pat size e T)])])))
+             [(vector n pat guard size T)
+              (vector n pat guard size e T)])])))
     (define c (generate-temporary 'c))
     (define cases (map (make-case c) (group-by (λ (x) (vector-ref x 0)) gs)))
     (values
      (with-syntax ([(clauses ...) cases])
        #`(case-lambda
            clauses ...
-           [(#,c . r) (error 'fail)]))
+           [(#,c . r) (error 'encode "invalid: ~a" r)]))
      (syntax-parse gs
-       [(#(_ _ _ _ (T:T ...)) ...)
+       [(#(_ _ _ _ _ (T:T ...)) ...)
         #'(case->
            (-> Context T.T ... Void)
            ...)]))
@@ -67,19 +77,28 @@
     (pattern (f:id)
              #:attr unsafe (format-id prefix "~a:~a" prefix (syntax-e #'f)))))
 
-(define-syntax define-proxy
-  (syntax-parser
-    [(_ name ls proc)
-     #'(...
-        (define-syntax name
-          (syntax-parser 
-            [(_ (~alt (~optional (~seq #:ctx c)
-                                 #:defaults ([c #'(assert (current-context))]))
-                      args)
-                ...)
-             #'(ls c args ...)]
-            [f:id
-             #'proc])))]))
+(module proxy racket/base
+  (require (for-syntax racket/base syntax/parse)
+           (only-in typed/racket/base assert)
+           "assembler.rkt")
+  (provide define-proxy)
+  
+  (define-syntax define-proxy
+    (syntax-parser
+      [(_ name ls proc)
+       #'(...
+          (begin
+            (define-syntax name
+              (syntax-parser 
+                [(_ (~alt (~optional (~seq #:ctx c)
+                                     #:defaults ([c #'(assert (current-context))]))
+                          args)
+                    ...)
+                 #'(ls c args ...)]
+                [f:id
+                 #'proc]))
+            (provide name)))])))
+(require 'proxy)
 
 (define-syntax dispatcher
   (syntax-parser
@@ -95,7 +114,7 @@
     [(_ name [pat enc] ...)
      #:declare pat (pred #'name)
      #:with (e ...) (generate-temporaries #'(enc ...))
-     #:with ls (generate-temporary 'ls)
+     #:with orig (generate-temporary 'ls)
      #:with tmp (generate-temporary 'tmp)
      #:with proc (generate-temporary 'proc)
      #:do [(define-values (dispatcher types)
@@ -104,8 +123,8 @@
               (syntax->list #'(e ...))))]
      #:with T types
      #`(begin
-         (: ls (-> Context Operand * Void))
-         (define-values (ls pat.unsafe ...)
+         (: orig (-> Context Operand * Void))
+         (define-values (orig pat.unsafe ...)
            (let ([e enc] ...)
              (values (ann #,dispatcher
                           (-> Context Operand * Void))
@@ -114,15 +133,15 @@
          (define proc
            (λ (#:ctx [c (assert (current-context))]
                . r)
-             (apply ls c r)))
-         (define-proxy name ls proc)
-         (module+ list
+             (apply orig c r)))
+         (define-proxy name orig proc)
+         (module+ ls
            (define (name [c : Context] [l : (Listof Operand)])
-             (apply ls c l))
+             (apply orig c l))
            (provide name))
          (module+ well-typed
            (: tmp T)
-           (define tmp ls)
+           (define tmp orig)
            (provide (rename-out [tmp name])))
          (module+ unsafe
            (provide pat.unsafe ...)))]))
