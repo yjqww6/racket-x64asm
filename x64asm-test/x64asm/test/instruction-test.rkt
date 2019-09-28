@@ -591,5 +591,24 @@
     (check-not-exn
      (λ ()
        (in eax (imm8 1))))
+
+    (check-not-exn
+     (λ ()
+       (test al (imm8 1))
+       (test ax (imm16 1))))
+
+    (check-not-exn
+     (λ ()
+       (movdqa (mref 128 rax) xmm0)
+       (movdqu (mref 128 rax) xmm0)))
     )
+
+  (check-equal?
+   (dump!
+    (mov (moff 8 -1) al))
+   #"\xa2\xff\xff\xff\xff\xff\xff\xff\xff")
+  (check-equal?
+   (dump!
+    (mov (moff 32 -1) eax))
+   #"\xa3\xff\xff\xff\xff\xff\xff\xff\xff")
   )

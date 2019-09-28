@@ -300,10 +300,10 @@
 
 (define-dispatch movdqa
   [(V-Wo) (V-W: #x6f #:mandatory-prefix #x66)]
-  [(Wo-V) (V-W: #x7f #:mandatory-prefix #x66)])
+  [(Wo-V) (W-V: #x7f #:mandatory-prefix #x66)])
 (define-dispatch movdqu
   [(V-Wo) (V-W: #x6f #:mandatory-prefix #xf3)]
-  [(Wo-V) (V-W: #x7f #:mandatory-prefix #xf3)])
+  [(Wo-V) (W-V: #x7f #:mandatory-prefix #xf3)])
 
 ;;movq2dq
 (define-dispatch movntdq
