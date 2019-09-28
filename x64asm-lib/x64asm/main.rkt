@@ -1,6 +1,5 @@
 #lang typed/racket/base
-(require "private/instruction.rkt"
-         "private/sse.rkt"
+(require "private/inst.rkt"
          "private/emit.rkt"
          "private/assembler.rkt"
          "private/operand.rkt"
@@ -11,8 +10,7 @@
          "typed.rkt"
          )
 
-(provide (all-from-out "private/instruction.rkt"
-                       "private/sse.rkt"
+(provide (all-from-out "private/inst.rkt"
                        "private/operand.rkt"
                        "private/operand-helper.rkt"
                        "private/registers.rkt"

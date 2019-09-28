@@ -1,7 +1,7 @@
 #lang racket/base
 (require (for-syntax racket/base syntax/parse 
                      syntax/id-set)
-         "assembler.rkt" "instruction.rkt" "sse.rkt"
+         "assembler.rkt" "inst.rkt"
          "operand.rkt"
          (prefix-in base: racket/base)
          (only-in typed/racket/base assert))
