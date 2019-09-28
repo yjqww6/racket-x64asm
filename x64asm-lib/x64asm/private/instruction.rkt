@@ -1,5 +1,5 @@
 #lang typed/racket/base
-(require "encode.rkt" "cases2.rkt" "assembler.rkt" "dispatch.rkt"
+(require "encode.rkt" "cases3.rkt" "assembler.rkt" "dispatch2.rkt"
          "registers.rkt" "operand.rkt"
          racket/match
          (for-syntax racket/base syntax/parse syntax/name))
@@ -81,8 +81,8 @@
   rol ror rcl rcr (shl sal) shr () sar)
 
 (define-dispatch test
-  [(AL-Ib) (I: #xa8)]
-  [(rAX-Iz) (I: #xa9)]
+  [(AL-Ib) (G-I: #xa8)]
+  [(rAX-Iz) (G-I: #xa9)]
   [(Eb-Ib) (E-I: #xf6)]
   [(Ev-Iz) (E-I: #xf7)]
   [(Eb-Gb) (E-G: #x84)]
@@ -170,8 +170,8 @@
   [(S-Ew) (G-E: #x8e #:override-operand-size (ann 32 Size))]
   [(AL-Ob) (G-O: #xa0)]
   [(rAX-Ov) (G-O: #xa1)]
-  [(AL-Gb) (O-G: #xa2)]
-  [(rAX-Gv) (O-G: #xa3)]
+  [(Ob-AL) (O-G: #xa2)]
+  [(Ov-rAX) (O-G: #xa3)]
   [(Gb-Ib) (G-I: #xb0 #:extend-opcode? #t)]
   [(Gv-Iv) (G-I: #xb8 #:extend-opcode? #t)]
   [(Eb-Ib) (E-I: #xc6)]

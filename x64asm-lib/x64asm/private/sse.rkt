@@ -1,5 +1,5 @@
 #lang typed/racket/base
-(require "encode.rkt" "cases2.rkt" "assembler.rkt" "dispatch.rkt"
+(require "encode.rkt" "cases3.rkt" "assembler.rkt" "dispatch2.rkt"
          "registers.rkt" "operand.rkt"
          racket/match
          (for-syntax racket/base syntax/parse
@@ -230,9 +230,11 @@
 (define-dispatch*
   [pmovmskb (Gd-V) (V-W: #xd7)]
   [pextrw (Gd-V-Ib)
-          (V-W-I: #xc5 #:mandatory-prefix #x66)]
-  [pinsrw (V-GdMw-Ib)
-          (V-W-I: #xc4 #:mandatory-prefix #x66)])
+          (V-W-I: #xc5 #:mandatory-prefix #x66)])
+
+(define-dispatch pinsrw
+  [(V-Gd-Ib) (V-W-I: #xc4 #:mandatory-prefix #x66)]
+  [(V-Mw-Ib) (V-W-I: #xc4 #:mandatory-prefix #x66)])
 
 (define-VW128 #x66
   [packssdw #x6b]
@@ -300,10 +302,10 @@
 
 (define-dispatch movdqa
   [(V-Wo) (V-W: #x6f #:mandatory-prefix #x66)]
-  [(Wo-V) (V-W: #x7f #:mandatory-prefix #x66)])
+  [(Wo-V) (W-V: #x7f #:mandatory-prefix #x66)])
 (define-dispatch movdqu
   [(V-Wo) (V-W: #x6f #:mandatory-prefix #xf3)]
-  [(Wo-V) (V-W: #x7f #:mandatory-prefix #xf3)])
+  [(Wo-V) (W-V: #x7f #:mandatory-prefix #xf3)])
 
 ;;movq2dq
 (define-dispatch movntdq

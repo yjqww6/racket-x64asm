@@ -4,32 +4,43 @@
          (for-syntax racket/base racket/match
                      syntax/parse racket/syntax
                      syntax/stx racket/sequence))
+(provide (all-defined-out) (for-syntax (all-defined-out)))
 
 (define-syntax define-reg-pred
   (syntax-parser
-    [(_ [X name reg T] ...)
+    [(_ [X name reg T T?] ...)
      #'(begin
          (~@
+          (: name (-> Any Boolean : #:+ T))
           (define (name a)
-            (eq? a reg))
+            (and (eq? a reg)
+                 (T? a)))
           (define-atom-pred X name Reg-size T))
          ...)]))
 
 (define-reg-pred
-  [AL AL? al GPR]
-  [CL CL? cl GPR]
-  [DX DX? dx GPR]
-  [FS FS? fs Seg]
-  [GS GS? gs Seg])
+  [AL AL? al GPR GPR?]
+  [CL CL? cl GPR GPR?]
+  [DX DX? dx GPR GPR?]
+  [FS FS? fs Seg Seg?]
+  [GS GS? gs Seg Seg?])
 
+(: eAX? (-> Any Boolean : #:+ GPR))
 (define (eAX? x)
-  (or (eq? x ax)
-      (eq? x eax)))
+  (and
+   (or (eq? x ax)
+       (eq? x eax))
+   (GPR? x)))
 
+(: rAX? (-> Any Boolean : #:+ GPR))
 (define (rAX? x)
-  (or (eAX? x)
-      (eq? x rax)))
+  (and
+   (or (eq? x ax)
+       (eq? x eax)
+       (eq? x rax))
+   (GPR? x)))
 
+(: one? (-> Any Boolean : #:+ Imm))
 (define (one? x)
   (and (Immediate? x)
        (eq? (Immediate-num x) 1)))
@@ -169,6 +180,7 @@
                 (define-pred+ r ...))])))
 
 (define-pred+
+  [V-V (V V) oo]
   [Eb-CL (E CL) bb]
   [Ev-CL (E CL) vb]
   [AL-Ib (AL I) bb]
@@ -183,6 +195,8 @@
   [rAX-Gv (rAX G) vv]
   [eAX-Ib (eAX I) zb]
   [eAX-DX (eAX DX) zb]
+  [Ob-AL (O AL) bb]
+  [Ov-rAX (O G) vv]
   [Ib-eAX (I eAX) bz]
   [DX-eAX (DX eAX) bz]
   [Gv-rAX (G rAX) vv]
