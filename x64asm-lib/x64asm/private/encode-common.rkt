@@ -54,14 +54,16 @@
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib b00 #b100 #b101)
              disp)]
-    [(Mref size (and (RBP) r) #f #f _)
+    [(Mref size r #f #f _)
+     #:when (eq? r rbp)
      (mod/rm reg-bits (Mref size r #f (Immediate 8 #f 0) #f))]
     [(Mref _ (?GPR #:code code) #f disp _)
      ;#:when (not (= code #b101))
      (values (rex.rxb reg-bits 0 code)
              (modrm/sib (disp->mod disp) reg-bits code)
              #f disp)]
-    [(Mref _ #f (cons (and (?GPR #:code index) (not (RSP))) s) disp _)
+    [(Mref _ #f (cons (?GPR #:code index)  s) disp _)
+     #:when (not (eq? index (Reg-code rsp)))
      (values (rex.rxb reg-bits index #b101)
              (modrm/sib b00 reg-bits #b100)
              (modrm/sib (->scale s) index #b101)
@@ -72,7 +74,8 @@
                 (Immediate 32 #f num)]
                [else
                 (error 'encode-common "cannot encode: requires disp32: ~a" disp)]))]
-    [(Mref _ (?GPR #:code base) (cons (and (?GPR #:code index) (not (RSP))) s) disp _)
+    [(Mref _ (?GPR #:code base) (cons (?GPR #:code index) s) disp _)
+     #:when (not (eq? index (Reg-code rsp)))
      (values (rex.rxb reg-bits index base)
              (modrm/sib (disp->mod disp) reg-bits #b100)
              (modrm/sib (->scale s) index base)

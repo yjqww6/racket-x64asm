@@ -33,38 +33,20 @@
 (define-syntax (define-reg stx)
   (syntax-parse stx
     [(_ T id:reg code:number size:number other ...)
-     #'(begin
-         (define id (T 'id code (ann size size) other ...))
-         (define-match-expander id.up
-           (λ (stx)
-             (syntax-case stx ()
-               [(_) #'(or (== id eq?)
-                          (T 'id code size other ...))]
-               [(_ s) #'(and (id.up)
-                             (?Reg #:size s))]))))]))
+     #'(define id (T 'id code (ann size size) other ...))]))
 
 (define-reg IP rip 0 64)
 (define-reg IP eip 0 32)
 
 (define-syntax (define-gpr stx)
   (syntax-parse stx
-    [(_ [code:number n8:reg n16:reg n32:reg n64:reg ?P] ...)
+    [(_ [code:number n8:reg n16:reg n32:reg n64:reg] ...)
      #'(begin
          (begin 
            (define-reg GPR n8 code 8)
            (define-reg GPR n16 code 16)
            (define-reg GPR n32 code 32)
-           (define-reg GPR n64 code 64)
-           (define-match-expander ?P
-             (λ (stx)
-               (syntax-case stx ()
-                 [(_)
-                  #'(or (== n16 eq?)
-                        (== n32 eq?)
-                        (== n64 eq?)
-                        (n16.up) (n32.up) (n64.up))]
-                 [(_ s)
-                  #'(and (?Reg #:size s) (?P))]))))
+           (define-reg GPR n64 code 64))
          ...)]))
 
 (define-reg GPR ah 4 8)
@@ -73,28 +55,32 @@
 (define-reg GPR bh 7 8)
 
 (define-gpr
-  [0 al ax eax rax ?rAX]
-  [1 cl cx ecx rcx ?rCX]
-  [2 dl dx edx rdx ?rDX]
-  [3 bl bx ebx rbx ?rBX]
-  [4 spl sp esp rsp ?rSP]
-  [5 bpl bp ebp rbp ?rBP]
-  [6 sil si esi rsi ?rSI]
-  [7 dil di edi rdi ?rDI]
-  [8 r8b r8w r8d r8 ?r8]
-  [9 r9b r9w r9d r9 ?r9]
-  [10 r10b r10w r10d r10 ?r10]
-  [11 r11b r11w r11d r11 ?r11]
-  [12 r12b r12w r12d r12 ?r12]
-  [13 r13b r13w r13d r13 ?r13]
-  [14 r14b r14w r14d r14 ?r14]
-  [15 r15b r15w r15d r15 ?r15])
+  [0 al ax eax rax]
+  [1 cl cx ecx rcx]
+  [2 dl dx edx rdx]
+  [3 bl bx ebx rbx]
+  [4 spl sp esp rsp]
+  [5 bpl bp ebp rbp]
+  [6 sil si esi rsi]
+  [7 dil di edi rdi]
+  [8 r8b r8w r8d r8]
+  [9 r9b r9w r9d r9]
+  [10 r10b r10w r10d r10]
+  [11 r11b r11w r11d r11]
+  [12 r12b r12w r12d r12]
+  [13 r13b r13w r13d r13]
+  [14 r14b r14w r14d r14]
+  [15 r15b r15w r15d r15])
 
 (define (reg-require-rex? [x : Reg])
-  (match x
-    [(?GPR #:size 64) #b1000]
-    [(or (SPL) (BPL) (SIL) (DIL)) 0]
-    [_ #f]))
+  (cond
+    [(GPR? x)
+     (define s (Reg-size x))
+     (cond
+       [(eq? s 64) #b1000]
+       [(or (eq? x spl) (eq? x bpl) (eq? x sil) (eq? x dil)) 0]
+       [else #f])]
+    [else #f]))
 
 (define (reg-code-lowbits [x : Reg])
   (bitwise-and (Reg-code x) #b111))
