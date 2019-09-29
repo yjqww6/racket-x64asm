@@ -1,5 +1,8 @@
 #lang scribble/manual
 @title[#:tag "reg"]{Registers}
+
+@defmodule[#:multi (x64asm/base x64asm x64asm/untyped) #:no-declare #:link-target? #f]
+
 @(require (for-label x64asm))
 @(define-syntax-rule (define-registers ? id ...)
    (begin (defthing id ?) ...))

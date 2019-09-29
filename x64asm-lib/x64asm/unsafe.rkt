@@ -5,5 +5,4 @@
 
 (provide (all-from-out
           (submod "private/instruction.rkt" unsafe)
-          (submod "private/sse.rkt" unsafe))
-         Encoder)
+          (submod "private/sse.rkt" unsafe)))

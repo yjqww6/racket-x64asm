@@ -16,7 +16,7 @@
 A minimal example for @racket[x64asm] in Typed Racket would be:
 
 @sample["../examples/start1.txt" k (get-1000)]
-@bold{Note.} For untyped racket, use @racket[(require x64asm/untyped)] instead.
+@bold{Note.} For untyped racket, use @(racketmodname x64asm/untyped) instead.
 
 Now there is a more complicated example for calculating fibonacci numbers:
 @sample["../examples/start2.txt" k (fib 40)]
@@ -25,6 +25,11 @@ An example without helper macros is
 @sample["../examples/start3.txt" k (my-fl+ 100.0 200.0)]
 
 @section{APIs}
+@defmodule[x64asm/base]{This module provide apis described here, but not instructions.}
+
+@defmodule[x64asm #:no-declare]{This module provide apis described here and instructions.}
+
+@defmodule[x64asm/untyped #:no-declare]{Same as @racketmodname[x64asm], but works in untyped racket.}
 
 @subsection{Core APIs}
 @defidform[Assembler]{

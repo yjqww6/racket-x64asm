@@ -10,8 +10,7 @@
 This module provide unsafe version of instructions that skip argument dispatching and some checking.
 @examples[#:eval (make-base-eval #:lang 'typed/racket/base)
           (require x64asm/unsafe)
-          (:print-type mov:Eb-Gb)
-          (:type #:verbose Encoder)]
+          (:print-type mov:Eb-Gb)]
 
 @section{Well-typed version of Instructions}
 @defmodule[x64asm/well-typed]
@@ -21,7 +20,7 @@ This module provide more precisely typed version of instructions.
           (require x64asm/well-typed)
           (:print-type mov)]
 
-Noted that these function no longer accept a keyword context argument, use @racket[current-context].
+Noted that these function no longer accept a keyword context argument, you must provide it explicitly.
 
 @section{Instructions that accept a list}
 @defmodule[x64asm/apply]

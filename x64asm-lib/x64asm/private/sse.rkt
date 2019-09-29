@@ -1,5 +1,5 @@
 #lang typed/racket/base
-(require "encode.rkt" "cases2.rkt" "assembler.rkt" "dispatch.rkt"
+(require "encode.rkt" "cases3.rkt" "assembler.rkt" "dispatch2.rkt"
          "registers.rkt" "operand.rkt"
          racket/match
          (for-syntax racket/base syntax/parse

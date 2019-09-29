@@ -1,6 +1,8 @@
 #lang scribble/manual
 @title[#:tag "inst"]{Instructions}
 
+@defmodule[#:multi (x64asm x64asm/untyped) #:no-declare #:link-target? #f]
+
 @section{Instruction prefix}
 @(require (for-label x64asm/private/prefix))
 @defform[(rep name args ...)]{
@@ -14,17 +16,16 @@
 @defform[(lock name args ...)]
 
 @section{Instruction list}
-@(require (for-label (for-syntax x64asm)) (for-syntax racket/base))
+@(require (for-label (for-syntax x64asm))
+          (for-syntax racket/base))
 @(begin-for-syntax 
    (define (get-ids mod)
      (let-values ([(_ p) (module->exports mod)])
        (for*/list ([slot (in-list p)]
-                   [slot (in-list (cdr slot))]
-                   #:when (not (regexp-match? #rx"unsafe-.*" (symbol->string (car slot)))))
+                   [slot (in-list (cdr slot))])
          (car slot))
        ))
-   (define ids (append (get-ids 'x64asm/private/instruction)
-                       (get-ids 'x64asm/private/sse))))
+   (define ids (get-ids 'x64asm/private/inst)))
 @(define-syntax (define-insts stx)
    (with-syntax ([(id ...) (datum->syntax #f ids)])
      #'(begin (defproc

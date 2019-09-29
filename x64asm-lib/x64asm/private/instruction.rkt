@@ -1,5 +1,5 @@
 #lang typed/racket/base
-(require "encode.rkt" "cases2.rkt" "assembler.rkt" "dispatch.rkt"
+(require "encode.rkt" "cases3.rkt" "assembler.rkt" "dispatch2.rkt"
          "registers.rkt" "operand.rkt"
          racket/match
          (for-syntax racket/base syntax/parse syntax/name))
@@ -141,14 +141,14 @@
   [(Ex) (E: #xff #:/ 6 #:default-64? #t)]
   [(Ib) (I: #x6a)]
   [(Iz) (I: #x68)]
-  [(FS-) (just #"\x0f\xa0")]
-  [(GS-) (just #"\x0f\xa8")])
+  [(FS) (just #"\x0f\xa0")]
+  [(GS) (just #"\x0f\xa8")])
 
 (define-dispatch pop
   [(Gx) (G: #x58 #:extend-opcode? #t #:default-64? #t)]
   [(Ex) (E: #x8f #:/ 0 #:default-64? #t)]
-  [(FS-) (just #"\x0f\xa1")]
-  [(GS-) (just #"\x0f\xa9")])
+  [(FS) (just #"\x0f\xa1")]
+  [(GS) (just #"\x0f\xa9")])
 
 (define-Jcc
   jo jno
