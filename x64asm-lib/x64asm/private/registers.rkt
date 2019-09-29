@@ -21,18 +21,9 @@
 (define-struct-match ?XMM XMM name code size)
 (define-struct-match ?IP IP name code size)
 
-(begin-for-syntax 
-  (define-syntax-class reg
-    (pattern name:id
-             #:with up (datum->syntax
-                        #'name
-                        (string->symbol
-                         (string-upcase
-                          (symbol->string (syntax-e #'name))))))))
-
 (define-syntax (define-reg stx)
   (syntax-parse stx
-    [(_ T id:reg code:number size:number other ...)
+    [(_ T id code:number size:number other ...)
      #'(define id (T 'id code (ann size size) other ...))]))
 
 (define-reg IP rip 0 64)
@@ -40,7 +31,7 @@
 
 (define-syntax (define-gpr stx)
   (syntax-parse stx
-    [(_ [code:number n8:reg n16:reg n32:reg n64:reg] ...)
+    [(_ [code:number n8 n16 n32 n64] ...)
      #'(begin
          (begin 
            (define-reg GPR n8 code 8)
