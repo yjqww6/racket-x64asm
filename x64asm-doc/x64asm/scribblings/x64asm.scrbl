@@ -25,9 +25,9 @@ An example without helper macros is
 @sample["../examples/start3.txt" k (my-fl+ 100.0 200.0)]
 
 @section{APIs}
-@defmodule[x64asm/base]{This module provide apis described here, but not instructions.}
+@defmodule[x64asm/base #:no-declare]{This module provide apis described here, but not instructions.}
 
-@defmodule[x64asm #:no-declare]{This module provide apis described here and instructions.}
+@defmodule[x64asm #:no-declare #:link-target? #f]{This module provide apis described here and instructions.}
 
 @defmodule[x64asm/untyped #:no-declare]{Same as @racketmodname[x64asm], but works in untyped racket.}
 
@@ -51,7 +51,7 @@ An example without helper macros is
 }
 
 @defproc[(emit-code! [asm Assembler? (current-assembler)]
-                     [ctx Context? (current-context)]
+                     [ctx Context? (assert (current-context))]
                      [ctx* (listof Context?) '()])
          void?]{
  Generates codes from given contexts.
@@ -76,7 +76,7 @@ An example without helper macros is
  Creates a context.
 }
 
-@defparam[current-context ctx Context?]{
+@defparam[current-context ctx (or/c #f Context?)]{
  A parameter defines the current context.
 }
 
@@ -102,12 +102,12 @@ An example without helper macros is
  Get the address of label. This should be called after @racket[emit-code!] is called.
 }
 
-@defproc[(:! [#:ctx ctx Context? (current-context)] [l Label?])
+@defproc[(:! [#:ctx ctx Context? (assert (current-context))] [l Label?])
          void?]{
  Locates a label in the current code stream of @racket[ctx].
 }
 
-@defproc[(data! [#:ctx ctx Context? (current-context)] [datum (or/c bytes? Imm?)])
+@defproc[(data! [#:ctx ctx Context? (assert (current-context))] [datum (or/c bytes? Imm?)] ...)
          void?]{
  Write custom datum into the code stream of @racket[ctx].
 }

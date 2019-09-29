@@ -1,11 +1,10 @@
 #lang scribble/manual
 @(require scribble/examples
-          (for-label x64asm/unsafe x64asm/well-typed)
-          (for-label (only-in x64asm current-context)))
+          (for-label x64asm/unsafe x64asm/well-typed))
 
 @title{Experimental features}
 @section{Unsafe version of Instructions}
-@defmodule[x64asm/unsafe]
+@defmodule[x64asm/unsafe #:no-declare]
 
 This module provide unsafe version of instructions that skip argument dispatching and some checking.
 @examples[#:eval (make-base-eval #:lang 'typed/racket/base)
@@ -13,7 +12,7 @@ This module provide unsafe version of instructions that skip argument dispatchin
           (:print-type mov:Eb-Gb)]
 
 @section{Well-typed version of Instructions}
-@defmodule[x64asm/well-typed]
+@defmodule[x64asm/well-typed #:no-declare]
 
 This module provide more precisely typed version of instructions.
 @examples[#:eval (make-base-eval #:lang 'typed/racket/base)
@@ -23,7 +22,7 @@ This module provide more precisely typed version of instructions.
 Noted that these function no longer accept a keyword context argument, you must provide it explicitly.
 
 @section{Instructions that accept a list}
-@defmodule[x64asm/apply]
+@defmodule[x64asm/apply #:no-declare]
 
 Since @racket[apply] cannot be used with keyword arguments in Type Racket,
 this module provide another version of instructions that accept a list of operands.

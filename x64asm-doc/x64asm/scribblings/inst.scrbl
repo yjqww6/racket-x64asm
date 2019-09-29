@@ -4,7 +4,7 @@
 @defmodule[#:multi (x64asm x64asm/untyped) #:no-declare #:link-target? #f]
 
 @section{Instruction prefix}
-@(require (for-label x64asm/private/prefix))
+@(require (for-label x64asm/private/prefix (only-in typed/racket/base assert)))
 @defform[(rep name args ...)]{
  Call @racket[(name args ...)] with used prefix.
 }
@@ -29,7 +29,7 @@
 @(define-syntax (define-insts stx)
    (with-syntax ([(id ...) (datum->syntax #f ids)])
      #'(begin (defproc
-                (id [#:ctx ctx Context? (current-context)]
+                (id [#:ctx ctx Context? (assert (current-context))]
                     [operand (or/c Reg? Mref? Imm? Offset?)]
                     (... ...))
                 void?)
