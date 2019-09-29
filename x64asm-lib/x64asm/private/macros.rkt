@@ -1,11 +1,8 @@
 #lang racket/base
-(require (for-syntax racket/base syntax/parse)
-         "private/operand.rkt"
-         "private/operand-helper.rkt"
-         "private/assembler.rkt"
-         "private/emit.rkt")
 
-(provide λ! define-λ!)
+(require (for-syntax racket/base syntax/parse)
+         "emit.rkt" "assembler.rkt" "operand-helper.rkt" "operand.rkt")
+(provide (all-defined-out))
 
 (define-syntax λ!
   (syntax-parser

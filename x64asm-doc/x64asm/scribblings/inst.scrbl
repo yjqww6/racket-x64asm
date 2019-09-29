@@ -1,6 +1,8 @@
 #lang scribble/manual
 @title[#:tag "inst"]{Instructions}
 
+@defmodule[#:multi (x64asm x64asm/untyped) #:no-declare #:link-target? #f]
+
 @section{Instruction prefix}
 @(require (for-label x64asm/private/prefix))
 @defform[(rep name args ...)]{
