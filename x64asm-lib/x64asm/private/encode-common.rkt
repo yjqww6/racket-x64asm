@@ -1,6 +1,6 @@
 #lang typed/racket/base
 (require racket/match racket/fixnum
-         "assembler.rkt" "registers.rkt" "operand.rkt")
+         "assembler.rkt" "registers.rkt" "operand.rkt" "trace.rkt")
 
 (provide (all-defined-out))
 
@@ -73,7 +73,7 @@
                [(Immediate 8 #f num)
                 (Immediate 32 #f num)]
                [else
-                (error 'encode-common "cannot encode: requires disp32: ~a" disp)]))]
+                (report-error "cannot encode: requires disp32: ~a" disp)]))]
     [(Mref _ (?GPR #:code base) (cons (?GPR #:code index) s) disp _)
      #:when (not (eq? index (Reg-code rsp)))
      (values (rex.rxb reg-bits index base)
@@ -81,8 +81,7 @@
              (modrm/sib (->scale s) index base)
              disp)]
     [_
-     (error 'modrm
-            "invalid operand: ~a" operand)]))
+     (report-invalid-operands operand)]))
 
 (define (asm-legacy-prefix! [ctx : Context]
                             [prefix-group-1 : (Option Byte)]
@@ -109,8 +108,7 @@
   (match* (G E)
     [((?Reg #:size size) _) size]
     [(_ (?Reg #:size size)) size]
-    [(_ (Mref size _ _ _ _)) size]
-    [(_ _) (error 'find-operand-size "unknown operand size: ~a" E)]))
+    [(_ (Mref size _ _ _ _)) size]))
 
 (define (find-addressing-size [E : (U Reg Mref)]) : Size
   (match E

@@ -1,9 +1,7 @@
 #lang typed/racket/base
 (require "encode.rkt" "assembler.rkt" "registers.rkt" "operand.rkt"
-         "cases3.rkt" "patterns.rkt"
+         "cases3.rkt" "patterns.rkt" "trace.rkt"
          racket/match
-         #;(rename-in racket/base
-                      [define-syntax base:defstx])
          (for-syntax racket/base racket/match
                      syntax/parse syntax/name racket/list
                      racket/syntax syntax/id-table))
@@ -19,7 +17,7 @@
            (with-syntax ([(g ...) g])
              #`(and (g arg) ...))]))))
   
-  (define ((make-case c) gs)
+  (define ((make-case c caller) gs)
     (match gs
       [(list (vector 0 '() #f #f e '()))
        #`[(#,c) (#,e #,c)]]
@@ -33,13 +31,15 @@
                      [(p ...) pat]
                      [(s ...) size]
                      [(e ...) e]
-                     [c c])
+                     [c c]
+                     [caller caller])
          (with-syntax ([(g ...) (make-guard guard (syntax->list #'(arg ...)))])
            #'[(c arg ...)
-              (pred-tree
-               (arg ...) (ss ...) (error 'encode "invalid: ~a" (list arg ...))
-               [p (and g (s ss ...)) (e c arg ...)]
-               ...)]))]))
+              (with-continuation-mark trace-key caller
+                (pred-tree
+                 (arg ...) (ss ...) (report-invalid-operands (list arg ...) caller)
+                 [p (and g (s ss ...)) (e c arg ...)]
+                 ...))]))]))
 
   (define dispatchers '())
   
@@ -55,13 +55,14 @@
         [(a . b)
          (eq? (syntax-e #'a) (syntax-e #'b))])))
 
-  (define (make-dispatcher-helper pats)
+  (define (make-dispatcher-helper pats caller)
     (define-syntax-class T
       (pattern (a)
                #:attr T #'a)
       (pattern (b ...)
                #:attr T #'(U b ...)))
-    (with-syntax ([(e ...) (generate-temporaries pats)])
+    (with-syntax ([(e ...) (generate-temporaries pats)]
+                  [caller caller])
       (define gs
         (for/list ([p (in-list pats)]
                    [e (in-list (syntax->list #'(e ...)))])
@@ -72,13 +73,14 @@
                [(vector n pat guard size T)
                 (vector n pat guard size e T)])])))
       (define c (generate-temporary 'c))
-      (define cases (map (make-case c) (group-by (λ (x) (vector-ref x 0)) gs)))
+      (define cases (map (make-case c #'caller)
+                         (group-by (λ (x) (vector-ref x 0)) gs)))
       (syntax-parse gs
         [(#(_ _ _ _ _ (T:T ...)) ...)
          (define t 
-          #'(case->
-             (-> Context T.T ... Void)
-             ...))
+           #'(case->
+              (-> Context T.T ... Void)
+              ...))
          (values
           (let ()
             (cond
@@ -88,20 +90,20 @@
                (define id
                  (with-syntax ([(clauses ...) cases])
                    (syntax-local-lift-expression
-                    #`(λ ([e : (-> Context T.T ... Void)] ...)
+                    #`(λ ([caller : Symbol] [e : (-> Context T.T ... Void)] ...)
                         (ann
                          (case-lambda
                            clauses ...
-                           [(#,c . r) (error 'encode "invalid: ~a" r)])
+                           [(#,c . r) (report-invalid-operands r caller)])
                          (-> Context Operand * Void))))))
                (set! dispatchers (cons (cons pats id) dispatchers))
                id]))
           t)])))
 
   
-  (define (make-dispatcher pats eids)
-    (let-values ([(id t) (make-dispatcher-helper pats)])
-      (values #`(#,id #,@eids) t))
+  (define (make-dispatcher pats eids caller)
+    (let-values ([(id t) (make-dispatcher-helper pats caller)])
+      (values #`(#,id '#,caller #,@eids) t))
     ))
 
 (begin-for-syntax
@@ -131,7 +133,8 @@
      #:do [(define-values (dispatcher types)
              (make-dispatcher
               (syntax->list #'(pat ...))
-              (syntax->list #'(e ...))))]
+              (syntax->list #'(e ...))
+              #'name))]
      #:with T types
      #`(begin
          (: orig (-> Context Operand * Void))
