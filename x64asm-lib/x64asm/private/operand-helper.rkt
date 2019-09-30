@@ -52,6 +52,13 @@
         #'(Mref size base is #f seg)])]))
 
 (define-syntax (label stx)
+  (define (helper stx lifted sym)
+    (define id
+      (syntax-property
+       (datum->syntax lifted (syntax->datum lifted) stx)
+       'original-for-check-syntax
+       #t))
+    (syntax-property lifted sym (list id)))
   (syntax-parse stx
     [(_)
      #`(make-label '#,(syntax-local-infer-name stx))]
@@ -61,15 +68,11 @@
        [(free-id-table-ref table #'a (λ () #f))
         =>
         (λ (lifted)
-          (syntax-property lifted
-                           'disappeared-use
-                           (list (syntax-local-introduce #'a))))]
+          (helper #'a lifted 'disappeared-use))]
        [else
         (define lifted (syntax-local-lift-expression #'(make-label 'a)))
         (free-id-table-set! table #'a (syntax-local-introduce lifted))
-        (syntax-property lifted
-                         'disappeared-binding
-                         (list (syntax-local-introduce #'a)))])]))
+        (helper #'a lifted 'disappeared-binding)])]))
 
 
 (define-syntax-parameter current-labels-target #f)
