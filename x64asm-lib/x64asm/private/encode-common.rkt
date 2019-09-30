@@ -118,16 +118,20 @@
     [(Mref _ (?GPR #:size size) (cons (?GPR #:size size) _) _ _) size]
     [_ (ann 64 Size)]))
 
-(define (encode-common [ctx : Context]
-                       [opcode : Byte]
-                       [G : (U Reg Byte)] [E : (U Reg Mref)] [I : (Option Imm)]
-                       #:prefix-group-1 [prefix-group-1 : (Option Byte) #f]
-                       #:mandatory-prefix [mandatory-prefix : (Option Byte) #f]
-                       #:opcode-prefix [opcode-prefix : (Option Bytes) #f]
-                       #:default-64? [default-64? : Boolean #f]
-                       #:override-operand-size [override-operand-size : (Option Size) #f]
-                       )
-  (define operand-size (or override-operand-size (find-operand-size G E)))
+(define ((encode-common [opcode : Byte]
+                        #:prefix-group-1 [prefix-group-1 : (Option Byte) #f]
+                        #:mandatory-prefix [mandatory-prefix : (Option Byte) #f]
+                        #:opcode-prefix [opcode-prefix : (Option Bytes) #f]
+                        #:default-64? [default-64? : Boolean #f]
+                        #:override-operand-size [override-operand-size : (Option Size) #f]
+                        #:use-second-operand-size? [use-second-operand-size? : Boolean #f])
+         [ctx : Context]
+         [G : (U Reg Byte)] [E : (U Reg Mref)] [I : (Option Imm)])
+  (define operand-size (or override-operand-size (find-operand-size
+                                                  (if use-second-operand-size?
+                                                      0
+                                                      G)
+                                                  E)))
   (define addressing-size (find-addressing-size E))
   
   (define (asm-rex! [rxb : Byte])
@@ -168,16 +172,15 @@
     (asm-imm! ctx I))
   (finish-instruction! ctx))
 
-(define (encode-common2 [ctx : Context]
-                        [opcode : Byte]
-                        [G : (Option Reg)] [I : (Option Imm)]
-                        #:prefix-group-1 [prefix-group-1 : (Option Byte) #f]
-                        #:mandatory-prefix [mandatory-prefix : (Option Byte) #f]
-                        #:opcode-prefix [opcode-prefix : (Option Bytes) #f]
-                        #:extend-opcode? [extend-opcode? : Boolean #f]
-                        #:default-64? [default-64? : Boolean #f]
-                        #:seg [seg : (Option Seg) #f]
-                        )
+(define ((encode-common2 [opcode : Byte]
+                         #:prefix-group-1 [prefix-group-1 : (Option Byte) #f]
+                         #:mandatory-prefix [mandatory-prefix : (Option Byte) #f]
+                         #:opcode-prefix [opcode-prefix : (Option Bytes) #f]
+                         #:extend-opcode? [extend-opcode? : Boolean #f]
+                         #:default-64? [default-64? : Boolean #f])
+         [ctx : Context]
+         [G : (Option Reg)] [I : (Option Imm)]
+         [seg : (Option Seg) #f])
   (define operand-size
     (cond
       [G (Reg-size G)]

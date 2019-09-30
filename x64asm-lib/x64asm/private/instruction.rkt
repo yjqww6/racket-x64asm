@@ -141,14 +141,14 @@
   [(Ex) (E: #xff #:/ 6 #:default-64? #t)]
   [(Ib) (I: #x6a)]
   [(Iz) (I: #x68)]
-  [(FS) (just #"\x0f\xa0")]
-  [(GS) (just #"\x0f\xa8")])
+  [(FS) (just1 #"\x0f\xa0")]
+  [(GS) (just1 #"\x0f\xa8")])
 
 (define-dispatch pop
   [(Gx) (G: #x58 #:extend-opcode? #t #:default-64? #t)]
   [(Ex) (E: #x8f #:/ 0 #:default-64? #t)]
-  [(FS) (just #"\x0f\xa1")]
-  [(GS) (just #"\x0f\xa9")])
+  [(FS) (just1 #"\x0f\xa1")]
+  [(GS) (just1 #"\x0f\xa9")])
 
 (define-Jcc
   jo jno
@@ -165,7 +165,7 @@
   [(Ev-Gv) (E-G: #x89)]
   [(Gb-Eb) (G-E: #x8a)]
   [(Gv-Ev) (G-E: #x8b)]
-  [(Gv-S) (E-S: #x8c)]
+  [(Gv-S) (G-S: #x8c)]
   [(Mw-S) (E-G: #x8c #:override-operand-size (ann 32 Size))]
   [(S-Ew) (G-E: #x8e #:override-operand-size (ann 32 Size))]
   [(AL-Ob) (G-O: #xa0)]
@@ -291,7 +291,7 @@
   [(Gy-Ey) (G-E: '(#x0f #x38 #xf1) #:mandatory-prefix #xf2)])
 
 (define-dispatch enter
-  [(Iw-Ib) (I*: #xc8)])
+  [(Iw-Ib) (I-I: #xc8)])
 
 (define-dispatch in
   [(AL-Ib) (G-I: #xe4)]
