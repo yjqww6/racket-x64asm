@@ -137,13 +137,11 @@
                              (fx+ (fxrshift size 3)
                                   (Context-inst-size ctx)))]))
 
-(define (:! [l : Label] #:ctx [ctx : (Option Context) (current-context)])
-  (assert ctx)
+(define (:! [l : Label] #:ctx [ctx : Context (assert (current-context))])
   (asm-label! ctx l))
 
-(: data! ([#:ctx (Option Context)] (U Bytes Imm) * -> Void))
-(define (data! #:ctx [ctx (current-context)] . datum)
-  (assert ctx)
+(: data! ([#:ctx Context] (U Bytes Imm) * -> Void))
+(define (data! #:ctx [ctx (assert (current-context))] . datum)
   (let ()
     (define len
       (for/fold ([len : Nonnegative-Fixnum 0])
