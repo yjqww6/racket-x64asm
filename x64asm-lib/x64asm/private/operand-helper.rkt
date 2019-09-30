@@ -1,5 +1,6 @@
 #lang racket/base
-(require (for-syntax racket/base syntax/parse syntax/name)
+(require (for-syntax racket/base syntax/parse syntax/name
+                     syntax/id-table)
          racket/stxparam "operand.rkt" "registers.rkt"
          (only-in typed/racket/base ann))
 (provide label with-labels mref moff)
@@ -56,8 +57,19 @@
      #`(make-label '#,(syntax-local-infer-name stx))]
     [(_ a)
      (define table (syntax-parameter-value #'current-labels-target))
-     (hash-ref! table (syntax-e #'a)
-                (λ () (syntax-local-lift-expression #'(make-label 'a))))]))
+     (cond
+       [(free-id-table-ref table #'a (λ () #f))
+        =>
+        (λ (lifted)
+          (syntax-property lifted
+                           'disappeared-use
+                           (list (syntax-local-introduce #'a))))]
+       [else
+        (define lifted (syntax-local-lift-expression #'(make-label 'a)))
+        (free-id-table-set! table #'a (syntax-local-introduce lifted))
+        (syntax-property lifted
+                         'disappeared-binding
+                         (list (syntax-local-introduce #'a)))])]))
 
 
 (define-syntax-parameter current-labels-target #f)
@@ -80,8 +92,8 @@
             (define l (label)) ...
             (syntax-parameterize
                 ([current-labels-target
-                  (make-hasheq
-                   (list (cons 'l #'l) ...))])
+                  (make-free-id-table
+                   (list (cons #'l #'l) ...))])
               (with-labels-helper body ...))
             )]
        [else
