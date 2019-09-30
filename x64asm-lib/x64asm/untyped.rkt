@@ -16,6 +16,8 @@
               (~optional (~seq #:type T)))
         ...)
      #'(begin
-         (define (name p)
-           (function-ptr (cast p _uintptr _pointer)
-                         ctype)))]))
+         (define name
+           (let ([tmp ctype])
+             (λ (p)
+               (function-ptr (cast p _uintptr _pointer)
+                             tmp)))))]))

@@ -29,17 +29,19 @@
         (~alt (~once (~seq #:ctype ctype))
               (~once (~seq #:type T)))
         ...)
+     #:with (tmp) (generate-temporaries '(a))
      #`(begin
          (module name racket/base
            (begin
              (require #,(datum->syntax #f 'racket/base)
                       #,(datum->syntax #f 'ffi/unsafe))
              (define id
-               #,(datum->syntax
-                  #f
-                  `(λ (p)
-                     (function-ptr (cast p _uintptr _pointer)
-                                   ,(syntax->datum #'ctype)))))
+               (let ([tmp #,(datum->syntax #f (syntax->datum  #'ctype))])
+                 #,(datum->syntax
+                    #f
+                    `(λ (p)
+                       (function-ptr (cast p _uintptr _pointer)
+                                     ,#'tmp)))))
              (provide id)))
          (unsafe-require/typed 'name
                                [(id name) (Nonnegative-Fixnum -> T)]))]))

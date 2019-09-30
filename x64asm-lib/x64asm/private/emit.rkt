@@ -18,8 +18,11 @@
   (define allocated
     : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))
     '())
-  (dynamic-wind
-   void
+  (call-with-exception-handler
+   (λ (e)
+     (for ([a (in-list allocated)])
+       (free-executable-memory (car a) (cdr a)))
+     e)
    (λ ()
      (for ([ctx (in-list ctxs)])
        (when (not (fx= (Context-addr ctx) 0))
@@ -32,8 +35,8 @@
        (set-Context-addr! ctx addr))
      
      (for*
-       ([ctx (in-list ctxs)]
-        [(label off) (in-hash (Context-local-labels ctx))])
+         ([ctx (in-list ctxs)]
+          [(label off) (in-hash (Context-local-labels ctx))])
        (set-box! (Label-assigned? label) (fx+ (Context-addr ctx) off)))
 
      (for* ([ctx (in-list ctxs)]
@@ -49,27 +52,24 @@
               [else
                p]))
           ;may not fit
-          (define b (integer->integer-bytes num (fxquotient size 8) #t))
-          (bytes-copy! (Context-buf ctx) off b)]))
+          (integer->integer-bytes num (fxquotient size 8) #t
+                                  #f (Context-buf ctx) off)]))
 
      (for* ([ctx (in-list ctxs)]
             [reloc (in-list (Context-custom-relocs ctx))])
        (match reloc
          [(Reloc-Custom size off proc)
-          (define num (proc))
-          (define b (integer->integer-bytes num (fxquotient size 8) #t))
-          (bytes-copy! (Context-buf ctx) off b)]))
+          (define num (call-with-continuation-barrier proc))
+          (integer->integer-bytes num (fxquotient size 8) #t
+                                  #f (Context-buf ctx) off)]))
      
-     (set-Assembler-pages! asm (append allocated (Assembler-pages asm)))
-     (set! allocated '())
 
      (for ([ctx (in-list ctxs)])
        (copy-executable-memory (Context-addr ctx)
                                (Context-buf ctx)
                                (Context-offset ctx)))
-     )
-   (λ () (for ([a (in-list allocated)])
-           (free-executable-memory (car a) (cdr a)))))
+     (set-Assembler-pages! asm (append allocated (Assembler-pages asm)))
+     ))
   (void))
 
 (define (assembler-shutdown-all! [asm : Assembler (current-assembler)])
