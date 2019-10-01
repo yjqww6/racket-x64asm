@@ -18,6 +18,11 @@
         (map f '(0 1 2))
         (map g '(2 1 0))]
 
+@section{Calling C functions}
+@sample["../examples/asin.txt" k
+        (non-tail 1.0)
+        (tail 1.0)]
+
 @section{Error handling via NOP}
 Here is an advanced example for error handling via nop in caller side.
 

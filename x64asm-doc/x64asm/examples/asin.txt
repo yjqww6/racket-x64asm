@@ -1,0 +1,31 @@
+#lang typed/racket
+
+(module asin racket/base
+  (require ffi/unsafe)
+  (define asin
+    (cast (ffi-obj-ref "asin" #f)
+          _pointer _uintptr))
+  (provide asin))
+
+(require/typed 'asin [asin Integer])
+(require x64asm)
+
+(define-cast ->d
+  #:type (-> Flonum Flonum)
+  #:ctype (_fun _double -> _double))
+
+(define-λ! tail ->d
+  (mov rax (imm64 asin))
+  (jmp rax))
+
+(define-λ! non-tail ->d
+  (push rbp)
+  (mov rbp rsp)
+  
+  (mov rax (imm64 asin))
+  
+  (call rax)
+  (addsd xmm0 xmm0)
+  
+  (pop rbp)
+  (ret))
