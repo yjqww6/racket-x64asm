@@ -21,11 +21,15 @@
 (define-λ! non-tail ->d
   (push rbp)
   (mov rbp rsp)
+
+  ;;shadow space
+  (when (eq? (system-type) 'windows)
+    (sub rsp (imm8 32)))
   
   (mov rax (imm64 asin))
   
   (call rax)
   (addsd xmm0 xmm0)
-  
-  (pop rbp)
+
+  (leave)
   (ret))
