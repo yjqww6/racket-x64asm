@@ -30,10 +30,9 @@
 
 (define-λ! g int->int #:captured
   (lea rdx (mref 64 rip + (rel32 (label data))))
-  (xor r8 r8)
-  (mov r8b (mref 8 rdx + arg0 * 1))
+  (movzx rdx (mref 8 rdx + arg0 * 1))
   (lea rax (mref 64 rip + (rel32 (label here))))
-  (add rax r8)
+  (add rax rdx)
   (jmp rax)
   (:! (label here))
   (mov eax (imm32 100))
