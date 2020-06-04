@@ -4,7 +4,7 @@
          racket/match racket/fixnum racket/stxparam
          (for-syntax racket/base racket/syntax))
 
-(struct Assembler ([pages : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))])
+(struct Assembler ([pages : (Listof (Pairof Exact-Nonnegative-Integer Nonnegative-Fixnum))])
   #:mutable)
 
 (define (make-assembler)
@@ -27,7 +27,7 @@
                  [custom-relocs : (Listof Reloc-Custom)]
                  [local-labels : (HashTable Label Nonnegative-Fixnum)]
                  [label-required : (HashTable Reloc-Cell Nonnegative-Fixnum)]
-                 [addr : Nonnegative-Fixnum])
+                 [addr : Exact-Nonnegative-Integer])
   #:mutable)
 
 (define (make-context)
