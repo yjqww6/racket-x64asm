@@ -555,7 +555,7 @@
      (jmp (rel32 a) #:ctx c2)
      (emit-code! (current-assembler) c2)))
 
-  (check-not-exn
+  #;(check-not-exn
    (λ ()
      (define c (make-context))
      (define a (label))

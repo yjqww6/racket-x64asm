@@ -44,4 +44,4 @@
                                      ,#'tmp)))))
              (provide id)))
          (unsafe-require/typed 'name
-                               [(id name) (Nonnegative-Fixnum -> T)]))]))
+                               [(id name) (Exact-Nonnegative-Integer -> T)]))]))

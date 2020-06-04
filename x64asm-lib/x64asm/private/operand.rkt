@@ -7,7 +7,7 @@
 (define-type Scale (U 1 2 4 8))
 
 (struct Label ([name : Symbol]
-               [assigned? : (Boxof (U Boolean Nonnegative-Fixnum))])
+               [assigned? : (Boxof (U Boolean Exact-Nonnegative-Integer))])
   #:transparent)
 
 (define (make-label [name : Symbol])
@@ -77,7 +77,7 @@
 
 (define (label-addr [l : Label])
   (define a (unbox (Label-assigned? l)))
-  (unless (fixnum? a)
+  (when (boolean? a)
     (error 'label-addr
            "label do not have a address: ~a" l))
   a)
