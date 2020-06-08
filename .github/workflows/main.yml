@@ -1,0 +1,24 @@
+on:
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        racket-variant: ['regular', 'CS']
+        racket-version: ['7.6', '7.7']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+      - name: Install Racket
+        uses: Bogdanp/setup-racket@v0.8
+        with:
+          architecture: 'x64'
+          distribution: 'full'
+          variant: ${{ matrix.racket-variant }}
+          version: ${{ matrix.racket-version }}
+      - name: Install Package and its Dependencies
+        run: raco pkg install x64asm/ x64asm-lib/ x64asm-test/ x64asm-doc/
+      - name: Run Tests
+        run: raco test -p x64asm-test
