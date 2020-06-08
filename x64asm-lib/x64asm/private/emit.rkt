@@ -3,9 +3,9 @@
 (require "assembler.rkt" "operand.rkt" "registers.rkt"
          racket/match racket/fixnum)
 (require/typed "unsafe.rkt"
-               [allocate-executable-memory (Nonnegative-Fixnum -> Exact-Nonnegative-Integer)]
-               [free-executable-memory (Exact-Nonnegative-Integer Nonnegative-Fixnum -> Void)]
-               [copy-executable-memory (Exact-Nonnegative-Integer Bytes Nonnegative-Fixnum -> Void)])
+               [allocate-executable-memory (Nonnegative-Fixnum -> Nonnegative-Fixnum)]
+               [free-executable-memory (Nonnegative-Fixnum Nonnegative-Fixnum -> Void)]
+               [copy-executable-memory (Nonnegative-Fixnum Bytes Nonnegative-Fixnum -> Void)])
 (provide emit-code! assembler-shutdown-all!)
 
 (: emit-code! (->* ()
@@ -16,7 +16,7 @@
                     [c* '()])
   (define ctxs (cons (assert c) c*))
   (define allocated
-    : (Listof (Pairof Exact-Nonnegative-Integer Nonnegative-Fixnum))
+    : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))
     '())
   (call-with-exception-handler
    (λ (e)
@@ -25,7 +25,7 @@
      e)
    (λ ()
      (for ([ctx (in-list ctxs)])
-       (when (not (= (Context-addr ctx) 0))
+       (when (not (fx= (Context-addr ctx) 0))
          (error 'emit-code! "This context has been emited! : ~a" ctx))
        (define addr
          (allocate-executable-memory
@@ -37,7 +37,7 @@
      (for*
          ([ctx (in-list ctxs)]
           [(label off) (in-hash (Context-local-labels ctx))])
-       (set-box! (Label-assigned? label) (+ (Context-addr ctx) off)))
+       (set-box! (Label-assigned? label) (fx+ (Context-addr ctx) off)))
 
      (for* ([ctx (in-list ctxs)]
             [(reloc start)
@@ -48,7 +48,7 @@
           (define num
             (cond
               [rel?
-               (- p (+ (Context-addr ctx) start))]
+               (fx- p (+ (Context-addr ctx) start))]
               [else
                p]))
           ;may not fit
