@@ -14,7 +14,9 @@
          (_intptr = 0)
          (_size = (max s 1))
          (_int = #x07)
-         (_int = #x22)
+         (_int = (if (eq? (system-type 'os) 'macosx)
+                     #x1002
+                     #x22))
          (_int = -1)
          (_int64 = 0)
          ->
