@@ -15,24 +15,22 @@
                     [c (current-context)]
                     [c* '()])
   (define ctxs (cons (assert c) c*))
-  (define allocated
-    : (Listof (Pairof Nonnegative-Fixnum Nonnegative-Fixnum))
-    '())
+  (define size
+    (for/fold ([sum : Nonnegative-Fixnum 0])
+              ([ctx (in-list ctxs)])
+      (when (not (fx= (Context-addr ctx) 0))
+        (error 'emit-code! "This context has been emited! : ~a" ctx))
+      (fx+ sum (Context-offset ctx))))
+  (define addr (allocate-executable-memory size))
   (call-with-exception-handler
    (λ (e)
-     (for ([a (in-list allocated)])
-       (free-executable-memory (car a) (cdr a)))
+     (free-executable-memory addr size)
      e)
    (λ ()
-     (for ([ctx (in-list ctxs)])
-       (when (not (fx= (Context-addr ctx) 0))
-         (error 'emit-code! "This context has been emited! : ~a" ctx))
-       (define addr
-         (allocate-executable-memory
-          (Context-offset ctx)))
-       (set! allocated (cons (cons addr (Context-offset ctx))
-                             allocated))
-       (set-Context-addr! ctx addr))
+     (for/fold ([addr : Nonnegative-Fixnum addr])
+               ([ctx (in-list ctxs)])
+       (set-Context-addr! ctx addr)
+       (fx+ addr (Context-offset ctx)))
      
      (for*
          ([ctx (in-list ctxs)]
@@ -68,7 +66,7 @@
        (copy-executable-memory (Context-addr ctx)
                                (Context-buf ctx)
                                (Context-offset ctx)))
-     (set-Assembler-pages! asm (append allocated (Assembler-pages asm)))
+     (set-Assembler-pages! asm (cons (cons addr size) (Assembler-pages asm)))
      ))
   (void))
 

@@ -560,10 +560,9 @@
      (define c (make-context))
      (define a (label))
      (:! a #:ctx c)
-     (emit-code! (current-assembler) c)
      (define c2 (make-context))
      (jmp (rel32 a) #:ctx c2)
-     (emit-code! (current-assembler) c2)))
+     (emit-code! (current-assembler) c (list c2))))
 
   (parameterize ([current-context (make-context)])
     (check-exn
