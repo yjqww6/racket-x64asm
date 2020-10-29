@@ -237,7 +237,7 @@ An example without helper macros is
      body
      ...))]
 
- @bold{Experimental: } When @racket[#:captured] is given,
+ When @racket[#:captured] is given,
  @racket[(label _id)] syntax is enabled inside @racket[body].
  When @racket[(label _id)] is used, there is no need to define a label before using it.
 }

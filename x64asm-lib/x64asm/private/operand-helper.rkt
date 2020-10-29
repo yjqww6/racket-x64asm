@@ -1,6 +1,6 @@
 #lang racket/base
 (require (for-syntax racket/base syntax/parse syntax/name
-                     syntax/id-table)
+                     syntax/id-table "lift.rkt")
          racket/stxparam "operand.rkt" "registers.rkt"
          (only-in typed/racket/base ann))
 (provide label with-labels mref moff)
@@ -70,7 +70,7 @@
         (λ (lifted)
           (helper #'a lifted 'disappeared-use))]
        [else
-        (define lifted (syntax-local-lift-expression #'(make-label 'a)))
+        (define lifted (lift #'(make-label 'a)))
         (free-id-table-set! table #'a (syntax-local-introduce lifted))
         (helper #'a lifted 'disappeared-binding)])]))
 
@@ -80,13 +80,14 @@
 (define-syntax (with-labels-helper stx)
   (syntax-parse stx
     [(_ body ...)
-     (local-expand/capture-lifts
-      #'(let () body ...)
-      'expression
-      '())]))
+     (local-expand/capture
+      #'(let () body ...))]))
 
 (define-syntax (with-labels stx)
   (syntax-parse stx
+    [(_ form ...)
+     #:when (not (eq? (syntax-local-context) 'expression))
+     (syntax/loc stx (#%expression (with-labels form ...)))]
     [(_ (~optional (~and cap #:captured) #:defaults ([cap #'#f]))
         (l:id ...) body ...)
      (cond
