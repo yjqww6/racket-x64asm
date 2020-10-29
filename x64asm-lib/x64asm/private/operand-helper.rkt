@@ -85,14 +85,11 @@
 
 (define-syntax (with-labels stx)
   (syntax-parse stx
-    [(_ form ...)
-     #:when (not (eq? (syntax-local-context) 'expression))
-     (syntax/loc stx (#%expression (with-labels form ...)))]
     [(_ (~optional (~and cap #:captured) #:defaults ([cap #'#f]))
         (l:id ...) body ...)
      (cond
        [(syntax-e #'cap)
-        #`(let ()
+        #'(let ()
             (define l (label)) ...
             (syntax-parameterize
                 ([current-labels-target
