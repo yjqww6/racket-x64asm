@@ -6,4 +6,4 @@ Install it with
 raco pkg install x64asm
 ```
 
-Online documentations is available on https://docs.racket-lang.org/x64asm/
+Online documentations available on https://docs.racket-lang.org/x64asm/
