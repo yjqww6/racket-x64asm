@@ -3,8 +3,8 @@
                      syntax/parse)
          (only-in typed/racket/base assert)
          (only-in "assembler.rkt" current-context)
-         (submod "instruction.rkt" base)
-         (submod "sse.rkt" base)
+         "instruction.rkt"
+         "sse.rkt"
          (submod "instruction.rkt" procedure)
          (submod "sse.rkt" procedure))
 
@@ -34,12 +34,12 @@
     [(_ mod)
      (match/values
       (module->exports (syntax->datum #'mod))
-      [((cons (list 0 (cons id _) ...) _) _)
+      [(_ (cons (list 0 (cons id _) ...) _))
        (with-syntax ([(id ...)
                       (map (λ (x) (datum->syntax #'mod x)) id)])
          #'(begin (define-proxy id)
                   ...))])]))
 
-(define-proxies (submod "sse.rkt" base))
-(define-proxies (submod "instruction.rkt" base))
+(define-proxies "sse.rkt")
+(define-proxies "instruction.rkt")
 

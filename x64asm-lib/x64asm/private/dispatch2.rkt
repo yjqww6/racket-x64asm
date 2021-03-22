@@ -122,6 +122,10 @@
   (λ (#:ctx [c (assert (current-context))] . r)
     (apply orig c r)))
 
+(define (make-list-proc [orig : Instruction-ProtoType]) : Instruction-ListType
+  (λ (c r)
+    (apply orig c r)))
+
 (define-syntax define-dispatch-0
   (syntax-parser
     [(_ name (~optional (~seq #:alias [alias:id ...]) #:defaults ([(alias 1) #'()]))
@@ -148,27 +152,26 @@
          (define-values (orig pat-unsafe ...)
            (let ([e enc] ...)
              (values #,dispatcher e ...)))
-         (: proc Instruction-Type)
-         (define proc (make-proc orig))
-         (module+ base
-           (provide (rename-out [orig name] [orig alias] ...)))
+         (provide (rename-out [orig name] [orig alias] ...))
+         
          (module+ procedure
+           (: proc Instruction-Type)
+           (define proc (make-proc orig))
            (provide proc (rename-out [proc proc-alias] ...)))
          (module+ ls
-           (: name Instruction-ListType)
-           (define (name c l)
-             (apply orig c l))
+           (define name (make-list-proc orig))
            (provide name (rename-out [name alias] ...)))
          (module+ well-typed
            (: tmp T)
            (define tmp orig)
            (provide (rename-out [tmp name] [tmp alias] ...)))
          (module+ unsafe
-           (provide pat-unsafe ...
-                    (rename-out
-                     [pat-unsafe pat-unsafe-alias]
-                     ...)
-                    ...)))]))
+           (provide
+            pat-unsafe ...
+            (rename-out
+             [pat-unsafe pat-unsafe-alias]
+             ...)
+            ...)))]))
 
 (define-syntax (define-dispatch stx)
   (define-syntax-class names
