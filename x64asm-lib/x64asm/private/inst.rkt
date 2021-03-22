@@ -8,6 +8,17 @@
          (submod "instruction.rkt" procedure)
          (submod "sse.rkt" procedure))
 
+(define-for-syntax (make-proxy name proc)
+  (syntax-parser
+    [(_ (~alt
+         (~optional (~seq #:ctx c)
+                    #:defaults ([c #'(assert (current-context))]))
+         arg)
+        ...)
+     #:with name name
+     #'(name c arg ...)]
+    [n:id proc]))
+
 (define-syntax (define-proxy stx)
   (syntax-parse stx
     [(_ name:id)
@@ -15,15 +26,7 @@
      #:with proc (format-id #'name "proc:~a" #'name)
      #'(...
         (begin
-          (define-syntax tmp
-            (syntax-parser
-              [(_ (~alt
-                   (~optional (~seq #:ctx c)
-                              #:defaults ([c #'(assert (current-context))]))
-                   arg)
-                  ...)
-               #'(name c arg ...)]
-              [n:id #'proc]))
+          (define-syntax tmp (make-proxy #'name #'proc))
           (provide (rename-out [tmp name]))))]))
 
 (define-syntax define-proxies

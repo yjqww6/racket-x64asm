@@ -11,9 +11,9 @@
     [(_ [name reg T] ...)
      #'(begin
          (~@
-          (: name (-> T Boolean))
-          (define (name a)
-            (eq? a reg)))
+          (define-syntax-rule (name a)
+            (let ([x a])
+              (eq? x reg))))
          ...)]))
 
 (define-reg-pred
@@ -23,21 +23,21 @@
   [FS? fs Seg]
   [GS? gs Seg])
 
-(: eAX? (-> GPR Boolean))
-(define (eAX? x)
-  (or (eq? x ax)
-      (eq? x eax)))
+(define-syntax-rule (eAX? a)
+  (let ([x a])
+    (or (eq? x ax)
+        (eq? x eax))))
 
-(: rAX? (-> GPR Boolean))
-(define (rAX? x)
-  (or (eq? x ax)
-      (eq? x eax)
-      (eq? x rax)))
+(define-syntax-rule (rAX? a)
+  (let ([x a])
+    (or (eq? x ax)
+        (eq? x eax)
+        (eq? x rax))))
 
-(: one? (-> Imm Boolean))
-(define (one? x)
-  (and (Immediate? x)
-       (eq? (Immediate-num x) 1)))
+(define-syntax-rule (one? a)
+  (let ([x a])
+    (and (Immediate? x)
+         (eq? (Immediate-num x) 1))))
 
 (define-atom-pred G GPR? Reg-size GPR)
 (define-atom-pred M Mref? Mref-size Mref)

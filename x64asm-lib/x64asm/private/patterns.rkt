@@ -1,74 +1,82 @@
 #lang racket/base
+(require syntax/parse/define (for-syntax racket/base))
+(provide (all-defined-out) (for-syntax get-types))
 
-(require (for-syntax racket/base racket/match syntax/parse))
-(provide (all-defined-out) (for-syntax (all-defined-out)))
+(module pred racket/base
+  (require racket/base racket/match (for-template racket/base))
+  (provide (all-defined-out))
 
-(define-for-syntax atom-preds (make-hasheq))
-(define-for-syntax compound-preds (make-hasheq))
+  (struct Atom (pred size type) #:authentic)
+  (define atom-preds (make-hasheq))
+  (define compound-preds (make-hasheq))
+
+  (define (get-pred id)
+    (hash-ref atom-preds id))
+  
+  (define (get-types id)
+    (map (λ (x) (Atom-type (hash-ref atom-preds x)))
+         (hash-ref compound-preds id
+                   (λ () (list id)))))
+
+  (struct Branch (test then else) #:authentic)
+  (struct Leaf (datum) #:authentic)
+  
+  (define (build-column cols datum)
+    (let f ([cols cols] [datum datum] [no (hasheq)])
+      (match cols
+        ['() #f]
+        [(cons '() col*)
+         (f col* (cdr datum) no)]
+        [(cons (cons h t) col*)
+         (cond
+           [(hash-ref no h (λ () #f))
+            (f (cons t col*) datum no)]
+           [else
+            (Branch h (Leaf (cons (car datum)
+                                  (for/list ([col (in-list col*)]
+                                             [datum (in-list (cdr datum))]
+                                             #:when (memq h col))
+                                    datum)))
+                    (f (cons t col*) datum (hash-set no h #t)))])])))
+
+  (define (build-pred-tree rows ids ss clauses fail)
+    (cond
+      [(ormap null? rows) (error 'build-pred-tree)]
+      [else
+       (let f ([rows rows] [ids ids] [ss ss] [clauses clauses])
+         (define built (build-column (map car rows)
+                                     (map cons (map cdr rows)
+                                          clauses)))
+         (let loop ([built built])
+           (match built
+             [#f fail]
+             [(Leaf (list (cons '() data) ...))
+              (syntax-case data ()
+                [(clauses ...)
+                 #`(cond
+                     clauses ...
+                     [else #,fail])])]
+             [(Leaf (list (cons p data) ...))
+              (f p (cdr ids) (cdr ss) data)]
+             [(Branch (app get-pred (Atom p size t)) s f)
+              #`(if (#,p #,(car ids))
+                    (let ([#,(car ss) (#,size #,(car ids))])
+                      #,(loop s))
+                    #,(loop f))])))])))
+
+(require (for-syntax 'pred))
 
 (define-syntax define-atom-pred
   (syntax-parser
     [(_ name ? size T)
      #'(begin-for-syntax
-         (hash-set! atom-preds 'name (list #'? #'size #'T)))]))
+         (hash-set! atom-preds 'name (Atom #'? #'size #'T)))]))
 
 (define-syntax define-compound-pred
   (syntax-parser
     [(_ name C ...)
      #'(begin-for-syntax
          (hash-set! compound-preds 'name (list 'C ...)))]))
-
-(define-for-syntax (get-types id)
-  (map (λ (x) (caddr (hash-ref atom-preds x)))
-       (hash-ref compound-preds id
-                 (λ () (list id)))))
-
-(define-for-syntax (get-pred id)
-  (hash-ref atom-preds id))
-
-(define-for-syntax (group-columns cols thunks [no (hasheq)])
-  (match cols
-    ['() #f]
-    [(cons '() col*)
-     (group-columns col* (cdr thunks) no)]
-    [(cons (cons h t) col*)
-     (cond
-       [(hash-ref no h (λ () #f))
-        (group-columns (cons t col*) thunks no)]
-       [else
-        (list 'branch h
-              (list 'ok
-                    (cons (car thunks)
-                          (for/list ([col (in-list col*)]
-                                     [thunk (in-list (cdr thunks))]
-                                     #:when (memq h col))
-                            thunk)))
-              (group-columns (cons t col*) thunks (hash-set no h #t)))])]))
-
-(define-for-syntax (build-pred-tree cases-ls ids ss succs fail)
-  (cond
-    [(ormap null? cases-ls) (error 'build-pred-tree)]
-    [else
-     (define grouped (group-columns (map car cases-ls)
-                                    (map cons (map cdr cases-ls)
-                                         succs)))
-     (let loop ([grouped grouped])
-       (match grouped
-         [#f fail]
-         [(list 'ok (list (cons '() data) ...))
-          (syntax-case data ()
-            [([guard expr] ...)
-             #`(cond
-                 [guard expr] ...
-                 [else #,fail])])]
-         [(list 'ok (list (cons p data) ...))
-          (build-pred-tree p (cdr ids) (cdr ss)
-                           data fail)]
-         [(list 'branch (app get-pred (list p size t)) s f)
-          #`(if (#,p #,(car ids))
-                (let ([#,(car ss) (#,size #,(car ids))])
-                  #,(loop s))
-                #,(loop f))]))]))
 
 (define-syntax pred-tree
   (let ()
@@ -81,11 +89,11 @@
                           (syntax-e #'pat)
                           (λ () (list (syntax-e #'pat)))))))
     (syntax-parser
-      [(_ (id ...) (s ...) err
-          [(pat:pat ...) guard expr] ...)
+      [(_ (id ...) (size:id ...) err
+          [(pat:pat ...) guard:expr expr] ...)
        (build-pred-tree (syntax->datum #'([pat.p  ...] ...))
                         (syntax->list #'(id ...))
-                        (syntax->list #'(s ...))
+                        (syntax->list #'(size ...))
                         (syntax->list #'([guard expr] ...))
                         #'err)])))
 

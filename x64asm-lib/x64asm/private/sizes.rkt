@@ -1,14 +1,22 @@
 #lang typed/racket/base
 
-(require racket/match "registers.rkt"
+(require racket/match
          (for-syntax racket/base syntax/parse racket/syntax))
 (provide (all-defined-out))
+
+(define-syntax define-rule
+  (syntax-parser
+    [(_ (f:id arg:id ...+) body:expr ...+)
+     #:with (tmp ...) (generate-temporaries #'(arg ...))
+     #'(define-syntax-rule (f tmp ...)
+         (let ([arg tmp] ...)
+           body ...))]))
 
 (define-syntax define-size
   (syntax-parser
     [(_ [name:id size:number ...] ...)
      #'(begin
-         (define (name [s : Size])
+         (define-rule (name s)
            (or (eq? s size) ...))
          ...)]))
 
@@ -24,29 +32,22 @@
   [y 32 64]
   [x 16 64])
 
-(define-type Size-Pred-2 (-> Size Size Boolean))
-(define-type Size-Pred-3 (-> Size Size Size Boolean))
-
-(: vv Size-Pred-2)
-(define (vv a b)
+(define-rule (vv a b)
   (and (v a)
        (eq? a b)))
 
-(: yy Size-Pred-2)
-(define (yy a b)
+(define-rule (yy a b)
   (and (y a)
        (eq? a b)))
 
-(: vz Size-Pred-2)
-(define (vz a b)
+(define-rule (vz a b)
   (match* (a b)
     [(16 16) #t]
     [(32 32) #t]
     [(64 32) #t]
     [(_ _) #f]))
 
-(: vvz Size-Pred-3)
-(define (vvz a b c)
+(define-rule (vvz a b c)
   (match* (a b c)
     [(16 16 16) #t]
     [(32 32 32) #t]
@@ -61,7 +62,7 @@
 (define-syntax define-size-pred
   (syntax-parser
     [(_ name:id u:u)
-     #'(define (name [a : Size] [b : Size])
+     #'(define-rule (name a b)
          (and (u.u a)
               (u.v b)))]))
 
@@ -100,7 +101,7 @@
      #:with name (format-id #'a "~a~a~a" #'a #'b #'c)
      #:with ab (format-id #'a "~a~a" #'a #'b)
      #'(begin
-         (define (name [x : Size] [y : Size] [z : Size])
+         (define-rule (name x y z)
            (and (ab x y)
                 (c z)))
          (define-size-pred3 r ...))]))

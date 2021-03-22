@@ -11,10 +11,10 @@
 (struct Reg ([name : Symbol] [code : Byte] [size : Size])
   #:transparent)
 
-(struct GPR Reg ())
-(struct XMM Reg ())
-(struct Seg Reg ([prefix : Byte]))
-(struct IP Reg ())
+(struct GPR Reg () #:transparent)
+(struct XMM Reg () #:transparent)
+(struct Seg Reg ([prefix : Byte]) #:transparent)
+(struct IP Reg () #:transparent)
 
 (define-struct-match ?Reg Reg name code size)
 (define-struct-match ?GPR GPR name code size)

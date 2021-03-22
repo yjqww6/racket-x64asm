@@ -1,13 +1,13 @@
 #lang typed/racket/base
-(require "encode.rkt" "assembler.rkt" "registers.rkt" "operand.rkt"
-         "cases3.rkt" "patterns.rkt" "trace.rkt"
-         racket/match
-         (for-syntax racket/base racket/match
-                     syntax/parse syntax/name racket/list
-                     racket/syntax syntax/id-table))
-(provide (all-defined-out))
+(require "assembler.rkt" "operand.rkt"
+         (for-syntax racket/base syntax/parse racket/syntax syntax/stx))
+(provide define-dispatch)
 
-(begin-for-syntax
+(module dispatcher racket/base
+  (require racket/match syntax/parse racket/list racket/syntax
+           (for-template typed/racket/base "cases3.rkt" "trace.rkt" "patterns.rkt"
+                         "assembler.rkt" "operand.rkt"))
+  
   (define (make-guard guard args)
     (with-syntax ([(arg ...) args])
       (for/list ([g (in-list guard)])
@@ -41,19 +41,7 @@
                  [p (and g (s ss ...)) (e c arg ...)]
                  ...))]))]))
 
-  (define dispatchers '())
-  
-  (define (same-dispatcher? a b)
-    (let f ([p #`(#,a . #,b)])
-      (syntax-case p ()
-        [(a . b)
-         (and (identifier? #'a)
-              (identifier? #'b))
-         (free-identifier=? #'a #'b)]
-        [((a . b) . (c . d))
-         (and (f #'(a . c)) (f #'(b . d)))]
-        [(a . b)
-         (eq? (syntax-e #'a) (syntax-e #'b))])))
+  (define dispatchers (make-hash))
 
   (define (make-dispatcher-helper pats caller)
     (define-syntax-class T
@@ -72,9 +60,7 @@
              (match (hash-ref pred-table (syntax-e #'p))
                [(vector n pat guard size T)
                 (vector n pat guard size e T)])])))
-      (define c (generate-temporary 'c))
-      (define cases (map (make-case c #'caller)
-                         (group-by (λ (x) (vector-ref x 0)) gs)))
+      (define key (map syntax->datum pats))
       (syntax-parse gs
         [(#(_ _ _ _ _ (T:T ...)) ...)
          (define t 
@@ -84,9 +70,12 @@
          (values
           (let ()
             (cond
-              [(assf (λ (x) (same-dispatcher? x pats)) dispatchers)
-               => cdr]
+              [(hash-ref dispatchers key (λ () #f))
+               => values]
               [else
+               (define c (generate-temporary 'c))
+               (define cases (map (make-case c #'caller)
+                                  (group-by (λ (x) (vector-ref x 0)) gs)))
                (define id
                  (with-syntax ([(clauses ...) cases])
                    (syntax-local-lift-expression
@@ -96,7 +85,7 @@
                            clauses ...
                            [(#,c . r) (report-invalid-operands r caller)])
                          (-> Context Operand * Void))))))
-               (set! dispatchers (cons (cons pats id) dispatchers))
+               (hash-set! dispatchers key id)
                id]))
           t)])))
 
@@ -104,14 +93,17 @@
   (define (make-dispatcher pats eids caller)
     (let-values ([(id t) (make-dispatcher-helper pats caller)])
       (values #`(#,id '#,caller #,@eids) t))
-    ))
+    )
 
-(begin-for-syntax
-  (define-syntax-class (pred prefix)
+  (define-syntax-class pred
     (pattern '()
-             #:attr unsafe (format-id prefix "~a:" prefix))
+             #:attr unsafe (λ (prefix) (format-id prefix "~a:" prefix)))
     (pattern (f:id)
-             #:attr unsafe (format-id prefix "~a:~a" prefix (syntax-e #'f)))))
+             #:attr unsafe (λ (prefix) (format-id prefix "~a:~a" prefix (syntax-e #'f)))))
+  
+  (provide pred make-dispatcher))
+
+(require (for-syntax 'dispatcher))
 
 (define-syntax dispatcher
   (syntax-parser
@@ -122,14 +114,29 @@
         (syntax->list #'(e ...))))
      a]))
 
+(define-type Instruction-ProtoType (-> Context Operand * Void))
+(define-type Instruction-Type (-> [#:ctx Context] Operand * Void))
+(define-type Instruction-ListType (-> Context (Listof Operand) Void))
+
+(define (make-proc [orig : Instruction-ProtoType]) : Instruction-Type
+  (λ (#:ctx [c (assert (current-context))] . r)
+    (apply orig c r)))
+
 (define-syntax define-dispatch-0
   (syntax-parser
-    [(_ name [pat enc] ...)
-     #:declare pat (pred #'name)
+    [(_ name (~optional (~seq #:alias [alias:id ...]) #:defaults ([(alias 1) #'()]))
+        [pat enc] ...)
+     #:declare pat pred
+     #:with ((pat-unsafe ...) (pat-unsafe-alias ...) ...)
+     (stx-map (λ (a)
+                (for/list ([f (in-list (attribute pat.unsafe))])
+                  (f a)))
+              #'(name alias ...))
      #:with (e ...) (generate-temporaries #'(enc ...))
      #:with orig (generate-temporary 'ls)
      #:with tmp (generate-temporary 'tmp)
-     #:with proc (format-id #'orig "proc:~a" #'name)
+     #:with (proc proc-alias ...)
+     (stx-map (λ (a) (format-id #'orig "proc:~a" a)) #'(name alias ...))
      #:do [(define-values (dispatcher types)
              (make-dispatcher
               (syntax->list #'(pat ...))
@@ -137,29 +144,31 @@
               #'name))]
      #:with T types
      #`(begin
-         (: orig (-> Context Operand * Void))
-         (define-values (orig pat.unsafe ...)
+         (: orig Instruction-ProtoType)
+         (define-values (orig pat-unsafe ...)
            (let ([e enc] ...)
              (values #,dispatcher e ...)))
-         (: proc (-> [#:ctx Context] Operand * Void))
-         (define proc
-           (λ (#:ctx [c (assert (current-context))]
-               . r)
-             (apply orig c r)))
+         (: proc Instruction-Type)
+         (define proc (make-proc orig))
          (module+ base
-           (provide (rename-out [orig name])))
+           (provide (rename-out [orig name] [orig alias] ...)))
          (module+ procedure
-           (provide proc))
+           (provide proc (rename-out [proc proc-alias] ...)))
          (module+ ls
-           (define (name [c : Context] [l : (Listof Operand)])
+           (: name Instruction-ListType)
+           (define (name c l)
              (apply orig c l))
-           (provide name))
+           (provide name (rename-out [name alias] ...)))
          (module+ well-typed
            (: tmp T)
            (define tmp orig)
-           (provide (rename-out [tmp name])))
+           (provide (rename-out [tmp name] [tmp alias] ...)))
          (module+ unsafe
-           (provide pat.unsafe ...)))]))
+           (provide pat-unsafe ...
+                    (rename-out
+                     [pat-unsafe pat-unsafe-alias]
+                     ...)
+                    ...)))]))
 
 (define-syntax (define-dispatch stx)
   (define-syntax-class names
@@ -174,10 +183,7 @@
   (syntax-parse stx
     [(_ () p ...) #'(begin)]
     [(_ name:names [pat enc] ...)
-     #'(begin
-         (define-dispatch-0 name.name [pat enc] ...)
-         (define-dispatch-0 name.alias [pat enc] ...)
-         ...)]))
+     #'(define-dispatch-0 name.name #:alias [name.alias ...] [pat enc] ...)]))
 
 #;
 (define-dispatch here
