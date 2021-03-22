@@ -8,7 +8,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         racket-variant: ['BC', 'CS']
-        racket-version: ['current']
+        racket-version: ['8.0']
     steps:
       - name: Checkout
         uses: actions/checkout@master
