@@ -8,18 +8,22 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         racket-variant: ['BC', 'CS']
-        racket-version: ['8.0']
+        racket-version: ['stable']
     steps:
       - name: Checkout
         uses: actions/checkout@master
       - name: Install Racket
-        uses: Bogdanp/setup-racket@v0.12
+        uses: Bogdanp/setup-racket@v1.1
         with:
           architecture: 'x64'
           distribution: 'full'
           variant: ${{ matrix.racket-variant }}
           version: ${{ matrix.racket-version }}
       - name: Install Package and its Dependencies
-        run: raco pkg install x64asm/ x64asm-lib/ x64asm-test/ x64asm-doc/
+        run: raco pkg install x64asm-lib/ x64asm-test/
       - name: Run Tests
         run: raco test -p x64asm-test
+      - name: Build Docs
+        if: matrix.os == 'ubuntu-latest' 
+        run: raco pkg install x64asm/ x64asm-doc/
+
