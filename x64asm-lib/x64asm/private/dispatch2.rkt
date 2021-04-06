@@ -114,15 +114,11 @@
         (syntax->list #'(e ...))))
      a]))
 
-(define-type Instruction-ProtoType (-> Context Operand * Void))
-(define-type Instruction-Type (-> [#:ctx Context] Operand * Void))
-(define-type Instruction-ListType (-> Context (Listof Operand) Void))
-
-(define (make-proc [orig : Instruction-ProtoType]) : Instruction-Type
+(define (make-proc [orig : (-> Context Operand * Void)]) : (-> [#:ctx Context] Operand * Void)
   (λ (#:ctx [c (assert (current-context))] . r)
     (apply orig c r)))
 
-(define (make-list-proc [orig : Instruction-ProtoType]) : Instruction-ListType
+(define (make-list-proc [orig : (-> Context Operand * Void)]) : (-> Context (Listof Operand) Void)
   (λ (c r)
     (apply orig c r)))
 
@@ -148,14 +144,14 @@
               #'name))]
      #:with T types
      #`(begin
-         (: orig Instruction-ProtoType)
+         (: orig (-> Context Operand * Void))
          (define-values (orig pat-unsafe ...)
            (let ([e enc] ...)
              (values #,dispatcher e ...)))
          (provide (rename-out [orig name] [orig alias] ...))
          
          (module+ procedure
-           (: proc Instruction-Type)
+           (: proc (-> [#:ctx Context] Operand * Void))
            (define proc (make-proc orig))
            (provide proc (rename-out [proc proc-alias] ...)))
          (module+ ls
