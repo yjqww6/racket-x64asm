@@ -21,11 +21,11 @@ This module provide more precisely typed variants of instructions.
 
 Noted that these functions no longer accept a keyword context argument, you must provide it explicitly.
 
-@section{Instructions that accept a list}
-@defmodule[x64asm/apply #:no-declare]
+@section{Instructions that accept a mandatory context argument}
+@defmodule[x64asm/plain #:no-declare]
 
 Since @racket[apply] cannot be used with keyword arguments in Type Racket,
-this module provide variants of instructions that accept a list of operands.
+this module provide variants of instructions that accept a mandatory context argument.
 @examples[#:eval (make-base-eval #:lang 'typed/racket/base)
-          (require x64asm/apply)
+          (require x64asm/plain)
           (:print-type mov)]

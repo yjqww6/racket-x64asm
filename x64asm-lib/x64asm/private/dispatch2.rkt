@@ -105,21 +105,8 @@
 
 (require (for-syntax 'dispatcher))
 
-(define-syntax dispatcher
-  (syntax-parser
-    [(_ [pat e] ...)
-     (define-values (a b)
-       (make-dispatcher
-        (syntax->list #'(pat ...))
-        (syntax->list #'(e ...))))
-     a]))
-
 (define (make-proc [orig : (-> Context Operand * Void)]) : (-> [#:ctx Context] Operand * Void)
   (λ (#:ctx [c (assert (current-context))] . r)
-    (apply orig c r)))
-
-(define (make-list-proc [orig : (-> Context Operand * Void)]) : (-> Context (Listof Operand) Void)
-  (λ (c r)
     (apply orig c r)))
 
 (define-syntax define-dispatch-0
@@ -152,11 +139,8 @@
          
          (module+ procedure
            (: proc (-> [#:ctx Context] Operand * Void))
-           (define proc (make-proc orig))
+           (define proc (procedure-rename (make-proc orig) 'name))
            (provide proc (rename-out [proc proc-alias] ...)))
-         (module+ ls
-           (define name (make-list-proc orig))
-           (provide name (rename-out [name alias] ...)))
          (module+ well-typed
            (: tmp T)
            (define tmp orig)

@@ -6,7 +6,7 @@
   #:ctype (_fun _int64 -> _int64))
           
 (define-λ! fib int->int #:labels (start l1 l2 l3)
-  (define arg0 (if (eq? (system-type)'windows) rcx rdi))
+  (define arg0 (if (eq? (system-type) 'windows) rcx rdi))
   (:! start)
   (push rbp)
   (mov rbp rsp)
