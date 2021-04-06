@@ -24,9 +24,9 @@
         (tail 1.0)]
 
 @section{Error handling via NOP}
-Here is an advanced example for error handling via nop in caller side.
+Here is an advanced example about error handling via nop in caller side.
 
-The code sums a tree of fixnums, and returns @racket[#f] when a non-fixnum is encountered. 
+The code sums a tree of fixnums, but returns @racket[#f] when a non-fixnum is encountered. 
 
 @sample["../examples/nop.txt" k
         (sum-tree-fixnums 1)

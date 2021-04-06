@@ -13,15 +13,15 @@
 @(table-of-contents)
 
 @section{Getting Started}
-A minimal example for @racket[x64asm] in Typed Racket would be:
+A minimal example of @racket[x64asm] in Typed Racket:
 
 @sample["../examples/start1.txt" k (get-1000)]
 @bold{Note.} For untyped racket, use @(racketmodname x64asm/untyped) instead.
 
-Now there is a more complicated example for calculating fibonacci numbers:
+A more complicated example about calculating fibonacci numbers:
 @sample["../examples/start2.txt" k (fib 40)]
 
-An example without helper macros is
+An example without helper macros:
 @sample["../examples/start3.txt" k (my-fl+ 100.0 200.0)]
 
 @section{APIs}
@@ -62,7 +62,7 @@ An example without helper macros is
 
 @defproc[(assembler-shutdown-all! [asm Assembler? (current-assembler)])
          void?]{
- Release memories held by @racket[asm]. Codes generated via @racket[asm] are invalidated.
+ Releases memories held by @racket[asm]. Codes generated via @racket[asm] are invalidated.
 }
 
 @defidform[Context]{
@@ -99,7 +99,7 @@ An example without helper macros is
 
 
 @defproc[(label-addr [l Label?]) exact-nonnegative-integer?]{
- Get the address of label. This should be called after @racket[emit-code!] is called.
+ Returns the address of label. This should be called after @racket[emit-code!] is called.
 }
 
 @defproc[(:! [#:ctx ctx Context? (assert (current-context))] [l Label?])
@@ -109,7 +109,7 @@ An example without helper macros is
 
 @defproc[(data! [#:ctx ctx Context? (assert (current-context))] [datum (or/c bytes? Imm?)] ...)
          void?]{
- Write custom datum into the code stream of @racket[ctx].
+ Writes custom datum into the code stream of @racket[ctx].
 }
 
 @subsection{Instrcution Operands}
