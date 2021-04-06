@@ -139,7 +139,7 @@
          
          (module+ procedure
            (: proc (-> [#:ctx Context] Operand * Void))
-           (define proc (procedure-rename (make-proc orig) 'name))
+           (define proc (make-proc orig))
            (provide proc (rename-out [proc proc-alias] ...)))
          (module+ well-typed
            (: tmp T)
